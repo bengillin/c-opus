@@ -13,7 +13,7 @@
 
 set -euo pipefail
 
-PROJECT="${CF_PROJECT:-claude-opus}"
+PROJECT="${CF_PROJECT:-c-opus}"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 echo "→ Rebuilding site..."
