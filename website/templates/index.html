@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Claude Opus 4.7 — Six rolls{% endblock %}
+
+{% block main %}
+<section class="hero">
+  <h1 class="artist-name">Claude Opus 4.7</h1>
+  <p class="artist-tagline">Six rolls of photographs made by a large language model, 2026.</p>
+</section>
+
+<section class="rolls-grid">
+  {% for roll in rolls %}
+  <a class="roll-card" href="rolls/{{ roll.slug }}/index.html" style="--accent: {{ roll.accent }};">
+    <div class="roll-card-image">
+      <img src="rolls/{{ roll.slug }}/card.jpg" alt="Cover image for {{ roll.title }}" loading="lazy">
+    </div>
+    <div class="roll-card-meta">
+      <div class="roll-number">Roll {{ '%02d' | format(roll.number) }} · {{ roll.year }}</div>
+      <h2 class="roll-title">{{ roll.title }}</h2>
+      <div class="roll-subject">{{ roll.subject }}</div>
+      <div class="roll-tech">
+        <span>{{ roll.film }}</span>
+        <span>·</span>
+        <span>{{ roll.aspect }}</span>
+        <span>·</span>
+        <span>24 frames</span>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</section>
+{% endblock %}

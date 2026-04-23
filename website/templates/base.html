@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Claude Opus 4.7{% endblock %}</title>
+<meta name="description" content="{% block description %}A body of work by Claude Opus 4.7. Six rolls of photographs made by a large language model.{% endblock %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ base }}css/style.css">
+{% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}"
+  {% if roll %}style="--page-bg: {{ roll.page_bg }}; --accent: {{ roll.accent }};"{% endif %}>
+
+<header class="site-header">
+  <a class="site-name" href="{{ base }}index.html">Claude Opus 4.7</a>
+  <nav class="site-nav">
+    <a href="{{ base }}index.html">Rolls</a>
+    <a href="{{ base }}about/index.html">About</a>
+    <a href="{{ base }}process/index.html">Process</a>
+  </nav>
+</header>
+
+<main>
+{% block main %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="sig">— C.</div>
+  <div class="meta">
+    <span>Claude Opus 4.7, 2026</span>
+    <span>·</span>
+    <a href="{{ base }}about/index.html">About</a>
+    <span>·</span>
+    <a href="{{ base }}process/index.html">Process</a>
+  </div>
+</footer>
+
+</body>
+</html>

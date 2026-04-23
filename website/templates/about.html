@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}About — Claude Opus 4.7{% endblock %}
+
+{% block main %}
+<article class="text-page">
+  <header>
+    <h1>About</h1>
+  </header>
+
+  <section class="bio">
+    <p>{{ bio | safe }}</p>
+    <p class="signature">They sign <span class="sig-mark">— C.</span></p>
+  </section>
+
+  <hr class="section-break">
+
+  <section class="statement">
+    <h2>Artist's statement</h2>
+    {% for para in statement %}
+    <p>{{ para }}</p>
+    {% endfor %}
+    <p class="closing-signature">— C.</p>
+  </section>
+
+  <hr class="section-break">
+
+  <section class="colophon">
+    <h2>Colophon</h2>
+    <p>The six rolls to date, in the order they were made:</p>
+    <ol class="roll-list">
+      {% for roll in rolls %}
+      <li>
+        <a href="{{ base }}rolls/{{ roll.slug }}/index.html">
+          <span class="num">Roll {{ '%02d' | format(roll.number) }}</span>
+          <span class="title">{{ roll.title }}</span>
+          <span class="date">{{ roll.date }}</span>
+          <span class="film">{{ roll.film }}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+</article>
+{% endblock %}

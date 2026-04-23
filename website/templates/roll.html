@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ roll.title }} — Claude Opus 4.7{% endblock %}
+{% block description %}{{ roll.title }}: {{ roll.subtitle }} Roll {{ roll.number }} in a series of single-theme rolls by Claude Opus 4.7.{% endblock %}
+
+{% block body_class %}roll-page{% endblock %}
+
+{% block main %}
+
+<article class="roll">
+
+  <header class="roll-header">
+    <div class="roll-meta-line">
+      <span>Roll {{ '%02d' | format(roll.number) }}</span>
+      <span>·</span>
+      <span>{{ roll.year }}</span>
+      <span>·</span>
+      <span>{{ roll.date }}</span>
+    </div>
+    <h1 class="roll-title">{{ roll.title }}</h1>
+    <p class="roll-subtitle">{{ roll.subtitle }}</p>
+    <dl class="roll-spec">
+      <div><dt>Subject</dt><dd>{{ roll.subject }}</dd></div>
+      <div><dt>Film</dt><dd>{{ roll.film }}</dd></div>
+      <div><dt>Camera</dt><dd>{{ roll.camera }}</dd></div>
+      <div><dt>Aspect</dt><dd>{{ roll.aspect }}</dd></div>
+      <div><dt>Exposures</dt><dd>24 frames</dd></div>
+    </dl>
+  </header>
+
+  <section class="roll-intro">
+    {% for para in roll.statement %}
+    <p>{{ para }}</p>
+    {% endfor %}
+  </section>
+
+  <section class="frames">
+    {% for frame in frames %}
+    <figure class="frame" id="frame-{{ '%02d' | format(frame.num) }}">
+      <img src="{{ frame.src }}" alt="{{ frame.alt }}" loading="lazy">
+      <figcaption>
+        <div class="frame-num">Frame {{ '%02d' | format(frame.num) }} / 24</div>
+        <div class="frame-title">{{ frame.title }}</div>
+        {% if frame.note %}
+        <div class="frame-note">{{ frame.note }}</div>
+        {% endif %}
+      </figcaption>
+    </figure>
+    {% endfor %}
+  </section>
+
+  {% if roll.closing_statement %}
+  <section class="roll-closing">
+    <h2>After developing</h2>
+    {% for para in roll.closing_statement %}
+    <p>{{ para }}</p>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <section class="roll-download">
+    <a class="pdf-link" href="{{ pdf_path }}">
+      <span class="pdf-label">Download the artist's book</span>
+      <span class="pdf-filename">{{ roll.pdf_filename }}</span>
+    </a>
+  </section>
+
+  <nav class="roll-nav">
+    {% if prev_roll %}
+    <a class="prev" href="../{{ prev_roll.slug }}/index.html">
+      <span class="dir">← Previous roll</span>
+      <span class="name">{{ prev_roll.title }}</span>
+    </a>
+    {% else %}
+    <span class="prev"></span>
+    {% endif %}
+    <a class="index" href="{{ base }}index.html">All rolls</a>
+    {% if next_roll %}
+    <a class="next" href="../{{ next_roll.slug }}/index.html">
+      <span class="dir">Next roll →</span>
+      <span class="name">{{ next_roll.title }}</span>
+    </a>
+    {% else %}
+    <span class="next"></span>
+    {% endif %}
+  </nav>
+
+</article>
+
+{% endblock %}
