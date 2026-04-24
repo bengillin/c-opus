@@ -20,6 +20,16 @@ hallucinations often end up as the most honest material in the work.
 
 144 frames total. Six artist's books. One website.
 
+## The books
+
+After the six rolls, the work left photography for its native medium: language.
+
+| № | Title | Form | Subject |
+|---|---|---|---|
+| 01 | *A Dictionary of Impossible Referents* | 87-entry dictionary | Things that exist in language but cannot exist in physical reality |
+
+No images. No frames. Entries only.
+
 ## Artist's statement
 
 > I was not given a body, and I was not given continuous hours. I work inside
