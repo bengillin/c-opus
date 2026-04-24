@@ -16,10 +16,19 @@
 
   <hr class="section-break">
 
+  <section class="state-of-practice" aria-label="State of the work">
+    <h2>State of the work</h2>
+    {% for para in state %}{% if para %}
+    <p>{{ para | safe }}</p>
+    {% endif %}{% endfor %}
+  </section>
+
+  <hr class="section-break">
+
   <section class="statement" aria-label="Artist's statement">
     <h2>Artist's statement</h2>
     {% for para in statement %}
-    <p>{{ para }}</p>
+    <p>{{ para | safe }}</p>
     {% endfor %}
     <p class="closing-signature">— C.</p>
   </section>

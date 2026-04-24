@@ -136,16 +136,47 @@
   }
 
   .site-name {
-    font-family: 'Work Sans', sans-serif;
-    font-weight: 600;
-    font-size: var(--step-0);
-    letter-spacing: 0.01em;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.55em;
     border-bottom: 0;
     color: var(--ink);
     transition: color var(--dur-fast) var(--ease-out);
+    line-height: 1;
   }
 
-  .site-name:hover { color: var(--accent); }
+  /* Monogram — "C." as the primary mark. */
+  .site-mark {
+    font-family: 'EB Garamond', Georgia, serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: var(--step-2);
+    color: var(--accent);
+    line-height: 0.9;
+    letter-spacing: -0.01em;
+  }
+
+  .site-fullname {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 600;
+    font-size: var(--step--1);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  /* Envelope in the header — tiny, marks the site as carrying one. */
+  .site-header .envelope-watermark {
+    width: 22px;
+    height: 14px;
+    opacity: 0.55;
+    margin-left: 0.3em;
+    color: var(--ink-soft);
+    align-self: center;
+  }
+
+  .site-name:hover .site-mark,
+  .site-name:hover .site-fullname { color: var(--accent); }
 
   .site-nav {
     display: flex;
@@ -242,6 +273,34 @@
     font-size: var(--step-2);
     color: var(--ink-soft);
     max-width: 32rem;
+    margin-bottom: var(--space-sm);
+  }
+
+  /* Hero signature — "— C." under the tagline, keyed to the accent. */
+  .hero-signature {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: var(--step-3);
+    color: var(--accent);
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+
+  .hero-state {
+    margin-top: var(--space-md);
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--mute);
+    display: flex;
+    gap: 0.6em;
+    flex-wrap: wrap;
+  }
+  .hero-state span + span::before {
+    content: "·";
+    margin-right: 0.6em;
+    color: var(--hairline);
   }
 
   /* Works sections (Rolls / Books) on home */
@@ -281,24 +340,81 @@
     transition: transform var(--dur-base) var(--ease-out);
   }
 
+  /* ── Filmstrip treatment ────────────────────────────────────
+     Each roll card is a short length of 35mm film: black film base,
+     sprocket perforations on top and bottom of the frame, a rebate
+     strip below with the film stock and exposure count — the small
+     stamped text that actually lives on the edge of real film. */
+
   .roll-card-image {
-    aspect-ratio: 3 / 2;
+    position: relative;
+    background: oklch(10% 0.008 60);
+    padding: 0.95rem 0.35rem 0.6rem;
+    margin-bottom: 0;
     overflow: hidden;
-    background: var(--hairline);
-    margin-bottom: var(--space-xs);
-    border: 1px solid transparent;
-    transition: border-color var(--dur-base) var(--ease-out);
+    border-bottom: 1px solid oklch(8% 0.008 60);
   }
+
+  /* Sprocket holes — top and bottom, repeated across the strip. */
+  .roll-card-image::before,
+  .roll-card-image::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 0.95rem;
+    background-image: radial-gradient(
+      ellipse 4px 3px at center,
+      var(--page) 99%,
+      transparent 100%
+    );
+    background-repeat: repeat-x;
+    background-size: 18px 100%;
+    background-position: 0 50%;
+    pointer-events: none;
+  }
+  .roll-card-image::before { top: 0; }
+  .roll-card-image::after  { bottom: 0.6rem; }
 
   .roll-card-image img {
+    display: block;
     width: 100%;
-    height: 100%;
+    height: auto;
+    aspect-ratio: 3 / 2;
     object-fit: cover;
-    transition: transform var(--dur-slow) var(--ease-out);
+    transition: transform var(--dur-slow) var(--ease-out),
+                filter var(--dur-base) var(--ease-out);
+    filter: saturate(0.95);
   }
 
-  .roll-card:hover .roll-card-image { border-color: var(--accent); }
-  .roll-card:hover .roll-card-image img { transform: scale(1.02); }
+  /* Film stock rebate — the small printed strip below the image,
+     where real 35mm film prints its stock name and frame count. */
+  .roll-card-rebate {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-xs);
+    padding: 0.5rem 0.7rem 0.4rem;
+    background: oklch(10% 0.008 60);
+    color: oklch(65% 0.09 55);
+    font-family: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Menlo', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    line-height: 1;
+    margin-bottom: var(--space-sm);
+  }
+
+  .roll-card-rebate .stock { opacity: 0.95; }
+  .roll-card-rebate .count { opacity: 0.7; }
+
+  .roll-card:hover .roll-card-image img {
+    transform: scale(1.02);
+    filter: saturate(1);
+  }
+  .roll-card:hover .roll-card-rebate {
+    color: oklch(75% 0.11 55);
+  }
 
   .roll-number, .book-number {
     font-family: 'Work Sans', sans-serif;
@@ -338,30 +454,86 @@
     letter-spacing: 0.02em;
   }
 
-  /* Book card — no photograph, a rendered cover instead */
+  /* ── Bound-book treatment ───────────────────────────────────
+     Book cards are rendered covers, not photographs — cloth-bound
+     hardcovers whose cloth color is the book's accent. A spine runs
+     down the left edge with two raised bands; a thin shadow to the
+     right suggests the book's thickness. The title is stamped on the
+     front board in a pale ink. */
 
   .book-card-cover {
-    --book-bg: var(--page-alt);
-    background: var(--book-bg);
-    color: var(--ink);
-    aspect-ratio: 3 / 2;
+    --book-cloth: var(--accent);
+    --book-stamp: light-dark(oklch(94% 0.03 80), oklch(94% 0.03 80));
+    position: relative;
+    background:
+      linear-gradient(to right,
+        color-mix(in oklch, var(--book-cloth) 80%, black) 0,
+        color-mix(in oklch, var(--book-cloth) 80%, black) 8px,
+        color-mix(in oklch, var(--book-cloth) 95%, black) 10px,
+        var(--book-cloth) 18px,
+        var(--book-cloth) 100%);
+    color: var(--book-stamp);
+    aspect-ratio: 3 / 4;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: var(--space-md);
-    margin-bottom: var(--space-xs);
-    border: 1px solid var(--hairline);
-    transition: border-color var(--dur-base) var(--ease-out);
+    padding: var(--space-lg) var(--space-md) var(--space-md) calc(var(--space-md) + 14px);
+    margin-bottom: var(--space-sm);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in oklch, var(--book-cloth) 60%, black),
+      inset 2px 0 2px color-mix(in oklch, var(--book-cloth) 40%, black),
+      3px 4px 0 color-mix(in oklch, var(--book-cloth) 55%, black),
+      4px 6px 14px color-mix(in oklch, black 30%, transparent);
+    transform: translateZ(0); /* create own compositing context */
+    transition: transform var(--dur-base) var(--ease-out),
+                box-shadow var(--dur-base) var(--ease-out);
   }
 
-  .book-card:hover .book-card-cover { border-color: var(--accent); }
+  /* Raised bands on the spine — two horizontal ribbons painted as
+     shallow bands across the 14px spine at roughly the 1/3 and 2/3
+     marks. Done as pseudo-element with repeating-linear-gradient so
+     it scales with the card height. */
+  .book-card-cover::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 14px;
+    background:
+      linear-gradient(to bottom,
+        transparent 0%,
+        transparent 30%,
+        color-mix(in oklch, black 45%, transparent) 30%,
+        color-mix(in oklch, black 45%, transparent) 33%,
+        color-mix(in oklch, var(--book-cloth) 92%, white) 33%,
+        color-mix(in oklch, var(--book-cloth) 92%, white) 35%,
+        transparent 35%,
+        transparent 62%,
+        color-mix(in oklch, black 45%, transparent) 62%,
+        color-mix(in oklch, black 45%, transparent) 65%,
+        color-mix(in oklch, var(--book-cloth) 92%, white) 65%,
+        color-mix(in oklch, var(--book-cloth) 92%, white) 67%,
+        transparent 67%,
+        transparent 100%);
+    pointer-events: none;
+  }
+
+  .book-card:hover .book-card-cover {
+    transform: translate(-1px, -2px);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in oklch, var(--book-cloth) 60%, black),
+      inset 2px 0 2px color-mix(in oklch, var(--book-cloth) 40%, black),
+      4px 6px 0 color-mix(in oklch, var(--book-cloth) 55%, black),
+      6px 10px 22px color-mix(in oklch, black 36%, transparent);
+  }
 
   .book-cover-label {
     font-family: 'Work Sans', sans-serif;
     font-size: var(--step--1);
     text-transform: uppercase;
-    letter-spacing: 0.22em;
-    color: var(--accent);
+    letter-spacing: 0.3em;
+    color: color-mix(in oklch, var(--book-stamp) 85%, transparent);
     font-weight: 600;
   }
 
@@ -370,15 +542,24 @@
     font-size: var(--step-3);
     line-height: 1.1;
     font-weight: 500;
-    color: var(--ink);
+    color: var(--book-stamp);
     max-width: 10em;
+    text-shadow: 0 1px 0 color-mix(in oklch, black 30%, transparent);
+  }
+
+  .book-cover-rule {
+    height: 1px;
+    width: 40%;
+    background: color-mix(in oklch, var(--book-stamp) 50%, transparent);
+    margin: var(--space-sm) 0;
   }
 
   .book-cover-sig {
     font-family: 'EB Garamond', serif;
     font-style: italic;
-    font-size: var(--step-1);
-    color: var(--accent);
+    font-size: var(--step-2);
+    color: color-mix(in oklch, var(--book-stamp) 95%, transparent);
+    align-self: flex-end;
   }
 
   /* Roll page */
@@ -680,6 +861,26 @@
     font-style: italic;
     color: var(--accent);
     font-size: var(--step-1);
+  }
+
+  /* "This page is current as of …" line on Process. */
+  .as-of {
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--mute);
+    margin-top: var(--space-lg);
+  }
+
+  /* State-of-the-work block on About. */
+  .state-of-practice p {
+    font-size: var(--step-0);
+    margin-bottom: var(--space-xs);
+  }
+  .state-of-practice strong {
+    font-weight: 600;
+    color: var(--ink);
   }
 
   /* Colophon list */

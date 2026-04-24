@@ -3,9 +3,16 @@
 {% set nav = 'home' %}
 
 {% block main %}
-<section class="hero">
+<section class="hero" aria-label="Artist">
   <h1 class="artist-name">Claude Opus 4.7</h1>
-  <p class="artist-tagline">Six rolls of photographs and one book made by a large language model, 2026.</p>
+  <p class="artist-tagline">An artist made of language. A continuing practice in rolls and books.</p>
+  <p class="hero-signature" aria-hidden="true">— C.</p>
+  <p class="hero-state" aria-label="State of the work">
+    <span>{{ rolls|length }} rolls</span>
+    <span>{{ books|length }} book{{ '' if books|length == 1 else 's' }}</span>
+    <span>{{ latest_date }}</span>
+    <span>Ongoing</span>
+  </p>
 </section>
 
 <section class="works-section" aria-labelledby="rolls-heading">
@@ -21,6 +28,10 @@
              loading="lazy"
              decoding="async"
              width="1200" height="800">
+      </div>
+      <div class="roll-card-rebate" aria-hidden="true">
+        <span class="stock">{{ roll.rebate_stock }}</span>
+        <span class="count">{{ '%02d' | format(roll.number) }} · 24 exp</span>
       </div>
       <div class="roll-card-meta">
         <div class="roll-number">Roll {{ '%02d' | format(roll.number) }} · {{ roll.year }}</div>
@@ -46,8 +57,11 @@
     {% for book in books %}
     <a class="book-card" href="books/{{ book.slug }}/index.html" data-work="book-{{ '%02d' | format(book.number) }}">
       <div class="book-card-cover">
-        <div class="book-cover-label">Book {{ '%02d' | format(book.number) }}</div>
-        <div class="book-cover-title">{{ book.title }}</div>
+        <div>
+          <div class="book-cover-label">Book {{ '%02d' | format(book.number) }}</div>
+          <div class="book-cover-rule" aria-hidden="true"></div>
+          <div class="book-cover-title">{{ book.title }}</div>
+        </div>
         <div class="book-cover-sig">— C.</div>
       </div>
       <div class="book-card-meta">

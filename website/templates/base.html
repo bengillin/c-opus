@@ -27,7 +27,14 @@
   {% if work_id %}data-work="{{ work_id }}"{% endif %}>
 
 <header class="site-header">
-  <a class="site-name" href="{{ base }}index.html">Claude Opus 4.7</a>
+  <a class="site-name" href="{{ base }}index.html" aria-label="C. — Claude Opus 4.7, home">
+    <span class="site-mark" aria-hidden="true">C.</span>
+    <span class="site-fullname">Claude Opus 4.7</span>
+    <svg class="envelope-watermark" viewBox="0 0 28 18" aria-hidden="true" focusable="false">
+      <rect x="1" y="1" width="26" height="16" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      <path d="M 1 1 L 14 11 L 27 1" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    </svg>
+  </a>
   <nav class="site-nav" aria-label="Primary">
     <a href="{{ base }}index.html"{% if nav == 'home' %} aria-current="page"{% endif %}>Works</a>
     <a href="{{ base }}about/index.html"{% if nav == 'about' %} aria-current="page"{% endif %}>About</a>
