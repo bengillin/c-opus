@@ -13,6 +13,7 @@ See website/deploy.sh for the one-command Cloudflare Pages deploy.
 
 from __future__ import annotations
 
+import re
 import runpy
 import shutil
 import subprocess
@@ -20,6 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from markupsafe import Markup, escape
 from PIL import Image
 
 
@@ -39,12 +41,16 @@ BOOKS_DIR = ROOT / "books"
 
 
 # ── Image sizing ─────────────────────────────────────────────────────
-# Gallery-view max dimension (what shows on a roll page)
-GALLERY_MAX = 1600
-GALLERY_QUALITY = 88
-# Card thumbnail for the homepage grid
-CARD_MAX = 900
+# Responsive frame sizes — the browser picks the right one from srcset.
+# 600w / 1200w / 2400w covers phones, laptops, and HiDPI desktops without
+# shipping a 2400w image to a phone.
+FRAME_WIDTHS = [600, 1200, 2400]
+FRAME_QUALITY = 85
+FRAME_DEFAULT_WIDTH = 1200  # <img src="..."> fallback for browsers ignoring srcset
+# Card variants for the homepage grid
+CARD_WIDTHS = [600, 1200]
 CARD_QUALITY = 82
+CARD_DEFAULT_WIDTH = 900     # what the fallback <img src> points at
 
 
 # ── Roll metadata ────────────────────────────────────────────────────
@@ -334,8 +340,42 @@ def load_entries_for_book(book: Book) -> list[tuple]:
     return list(ns["ENTRIES"])
 
 
+def _slugify_headword(term: str) -> str:
+    """Mirror the template's entry-id rule so cross-ref hrefs match anchors.
+
+    Template rule: term | lower | replace('-', '') | replace(' ', '-')
+    """
+    return term.lower().replace("-", "").replace(" ", "-")
+
+
+_XREF_RE = re.compile(r"\*([^*\n]+)\*")
+
+
+def linkify_entry_body(body: str, term_to_slug: dict[str, str]) -> Markup:
+    """Convert *Term* markers to xref links when Term is a known headword.
+
+    Other *text* markers become <em>text</em> (so existing italic usage in
+    the body — *actually*, *probably*, etc. — continues to render as emphasis).
+    The input body is escaped first, so any HTML in the source is inert.
+    """
+    escaped = str(escape(body))
+
+    def repl(match: re.Match) -> str:
+        inner = match.group(1)
+        # Trailing punctuation (common in the source: "*Relief-that-is-also-loss.*")
+        # moves outside the link so the anchor lookup succeeds on the clean term.
+        stripped = inner.rstrip(".,;:!?")
+        trailing = inner[len(stripped):]
+        slug = term_to_slug.get(stripped)
+        if slug:
+            return f'<a class="xref" href="#entry-{slug}">{stripped}</a>{trailing}'
+        return f"<em>{inner}</em>"
+
+    return Markup(_XREF_RE.sub(repl, escaped))
+
+
 def process_book(book: Book) -> dict:
-    """Copy the book's PDF and load its entries."""
+    """Copy the book's PDF, load entries, and linkify cross-references."""
     book_src = BOOKS_DIR / book.slug
     book_dist = DIST / "books" / book.slug
     pdf_src = book_src / book.pdf_filename
@@ -344,7 +384,17 @@ def process_book(book: Book) -> dict:
         pdf_dir.mkdir(parents=True, exist_ok=True)
         # Book PDFs are text-only and already tiny (~130 KB); no compression.
         shutil.copy2(pdf_src, pdf_dir / book.pdf_filename)
-    entries = load_entries_for_book(book)
+    raw_entries = load_entries_for_book(book)
+
+    # Build the headword → slug map so every *Term* marker in any entry body
+    # can become a working anchor link in the rendered page.
+    term_to_slug = {term: _slugify_headword(term) for (term, _pos, _body) in raw_entries}
+    entries = [
+        (term, pos, linkify_entry_body(body, term_to_slug))
+        for (term, pos, body) in raw_entries
+    ]
+    xref_count = sum(body.count('class="xref"') for (_t, _p, body) in entries)
+    print(f"    linkified {xref_count} cross-references across {len(entries)} entries")
     return {"book": book, "entries": entries}
 
 
@@ -360,6 +410,39 @@ def _resize_jpeg(src: Path, dst: Path, max_dim: int, quality: int):
         if scale < 1.0:
             img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
         img.save(dst, "JPEG", quality=quality, optimize=True, progressive=True)
+
+
+def _write_responsive_set(
+    src: Path, dst_dir: Path, stem: str, widths: list[int], quality: int,
+) -> dict:
+    """Write multiple widths of src into dst_dir as {stem}-{w}w.jpg.
+
+    Returns a dict with keys: srcset (string), widths (list), default_w (int),
+    files (list of Path). Skips widths larger than the source so we never
+    upscale.
+    """
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    with Image.open(src) as img:
+        img = img.convert("RGB")
+        orig_w, orig_h = img.size
+        aspect = orig_h / orig_w
+        produced: list[tuple[int, Path]] = []
+        for w in widths:
+            target_w = min(w, orig_w)
+            target_h = int(round(target_w * aspect))
+            resized = (
+                img.resize((target_w, target_h), Image.LANCZOS)
+                if target_w != orig_w else img
+            )
+            dst = dst_dir / f"{stem}-{w}w.jpg"
+            resized.save(dst, "JPEG", quality=quality, optimize=True, progressive=True)
+            produced.append((w, dst))
+    srcset = ", ".join(f"{p.name} {w}w" for w, p in produced)
+    return {
+        "srcset": srcset,
+        "widths": [w for w, _ in produced],
+        "files": [p for _, p in produced],
+    }
 
 
 def _compress_pdf_for_web(src: Path, dst: Path) -> tuple[bool, float]:
@@ -435,24 +518,31 @@ def process_roll_images(roll: Roll, frames: list[tuple]) -> list[dict]:
         if not src.exists():
             print(f"  ! missing {src}")
             continue
-        # Keep the source basename for readable URLs; convert .png → .jpg
-        web_name = Path(filename).stem + ".jpg"
-        dst = frames_dir / web_name
-        _resize_jpeg(src, dst, GALLERY_MAX, GALLERY_QUALITY)
+        stem = Path(filename).stem
+        set_info = _write_responsive_set(src, frames_dir, stem, FRAME_WIDTHS, FRAME_QUALITY)
+        # Fallback <img src>: pick the default width if produced, else largest.
+        widths = set_info["widths"]
+        fallback_w = FRAME_DEFAULT_WIDTH if FRAME_DEFAULT_WIDTH in widths else widths[-1]
         render_frames.append({
             "num": num,
             "title": title,
             "prompt": prompt,
             "note": note,
-            "src": f"frames/{web_name}",
+            "src": f"frames/{stem}-{fallback_w}w.jpg",
+            "src_1200": f"frames/{stem}-{fallback_w}w.jpg",
+            "srcset": ", ".join(f"frames/{stem}-{w}w.jpg {w}w" for w in widths),
             "alt": title,
         })
 
-    # Hero card image (smaller, for homepage grid)
+    # Hero card image — two sizes for the homepage grid
     hero_src = project_outputs / roll.hero_frame
     if hero_src.exists():
-        hero_dst = roll_dist / "card.jpg"
-        _resize_jpeg(hero_src, hero_dst, CARD_MAX, CARD_QUALITY)
+        card_info = _write_responsive_set(hero_src, roll_dist, "card", CARD_WIDTHS, CARD_QUALITY)
+        # Compat: templates reference card.jpg as the fallback src; symlink/copy
+        # the largest produced width into card.jpg so existing paths still work.
+        widths = card_info["widths"]
+        biggest = max(widths)
+        shutil.copy2(roll_dist / f"card-{biggest}w.jpg", roll_dist / "card.jpg")
 
     # PDF — compressed for web (original stays untouched in the project dir)
     pdf_src = ROLLS_DIR / roll.slug / roll.pdf_filename

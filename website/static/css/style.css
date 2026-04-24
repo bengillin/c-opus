@@ -1,981 +1,1013 @@
 /* ─────────────────────────────────────────────────────────────
-   Claude Opus 4.7 — artist's monograph site
+   Claude Opus 4.7 — artist's site
+   A site made in language, carrying an envelope, shifting palette
+   per work, admitting its refusals where it has them.
+
+   Architecture: CSS @layer, oklch palette with light-dark(),
+   fluid mobile-first, minimal JS.
    ───────────────────────────────────────────────────────────── */
 
-:root {
-  /* Defaults — overridden per-roll via inline style */
-  --page-bg: #F8F6F0;
-  --ink: #141210;
-  --ink-soft: #4A443C;
-  --mute: #8B8478;
-  --hairline: #D8D2C4;
-  --accent: #3C3C44;
-  --max: 1100px;
-  --text-max: 680px;
+@layer reset, tokens, base, layout, components, work, transitions, print;
+
+/* ── Reset ─────────────────────────────────────────────────── */
+
+@layer reset {
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+  body { margin: 0; min-height: 100dvh; display: flex; flex-direction: column; }
+  main { flex: 1; }
+  img, picture, svg, video { display: block; max-width: 100%; height: auto; }
+  img { font-style: italic; color: var(--mute); background: var(--hairline); }
+  h1, h2, h3, h4, h5, h6, p, ul, ol, dl, dd, figure, blockquote { margin: 0; padding: 0; }
+  ul, ol { list-style: none; }
+  button { font: inherit; background: none; border: 0; color: inherit; cursor: pointer; padding: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+  ::selection { background: var(--accent); color: var(--page); }
 }
 
-* {
-  box-sizing: border-box;
-}
+/* ── Tokens ────────────────────────────────────────────────── */
 
-html, body {
-  margin: 0;
-  padding: 0;
-}
+@layer tokens {
+  :root {
+    color-scheme: light dark;
 
-body {
-  background: var(--page-bg);
-  color: var(--ink);
-  font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
-  font-size: 19px;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
+    /* Fluid type scale (mobile → desktop via clamp) */
+    --step--1: clamp(0.78rem, 0.76rem + 0.1vw, 0.85rem);
+    --step-0:  clamp(0.95rem, 0.9rem + 0.25vw, 1.08rem);
+    --step-1:  clamp(1.1rem, 1.0rem + 0.5vw, 1.3rem);
+    --step-2:  clamp(1.3rem, 1.15rem + 0.7vw, 1.65rem);
+    --step-3:  clamp(1.55rem, 1.3rem + 1.2vw, 2.1rem);
+    --step-4:  clamp(2rem, 1.5rem + 2.4vw, 3.2rem);
+    --step-5:  clamp(2.4rem, 1.7rem + 3.5vw, 4.6rem);
 
-::selection {
-  background: var(--accent);
-  color: var(--page-bg);
-}
+    /* Spacing (fluid) */
+    --space-3xs: clamp(0.25rem, 0.23rem + 0.1vw, 0.3rem);
+    --space-2xs: clamp(0.4rem, 0.38rem + 0.15vw, 0.5rem);
+    --space-xs:  clamp(0.65rem, 0.6rem + 0.2vw, 0.8rem);
+    --space-sm:  clamp(1rem, 0.9rem + 0.4vw, 1.25rem);
+    --space-md:  clamp(1.5rem, 1.2rem + 1vw, 2rem);
+    --space-lg:  clamp(2.4rem, 1.8rem + 2vw, 3.6rem);
+    --space-xl:  clamp(3.5rem, 2.5rem + 3vw, 5.5rem);
+    --space-2xl: clamp(5rem, 3.5rem + 5vw, 9rem);
 
-a {
-  color: inherit;
-  text-decoration: none;
-  border-bottom: 1px solid currentColor;
-  transition: color 120ms ease, border-color 120ms ease;
-}
+    /* Layout widths */
+    --max: 1120px;
+    --text-max: 38rem;
+    --gutter: clamp(1.2rem, 0.8rem + 2vw, 2.5rem);
 
-a:hover {
-  color: var(--accent);
-}
+    /* Palette — oklch, light-dark aware.
+       Warm neutral page, warm near-black ink, graphite accent by default.
+       Each work overrides --accent via [data-work="…"] selectors below. */
+    --page:     light-dark(oklch(96% 0.012 75), oklch(13% 0.008 60));
+    --page-alt: light-dark(oklch(93% 0.014 75), oklch(17% 0.008 60));
+    --ink:      light-dark(oklch(18% 0.012 60), oklch(95% 0.005 75));
+    --ink-soft: light-dark(oklch(32% 0.012 60), oklch(80% 0.008 75));
+    --mute:     light-dark(oklch(52% 0.01 60), oklch(62% 0.008 75));
+    --hairline: light-dark(oklch(84% 0.015 75), oklch(27% 0.008 60));
+    --accent:   light-dark(oklch(35% 0.02 60), oklch(82% 0.03 75));
+    --accent-soft: color-mix(in oklch, var(--accent) 15%, transparent);
+    --on-accent: light-dark(oklch(96% 0.012 75), oklch(13% 0.008 60));
 
-h1, h2, h3, h4 {
-  font-family: 'Work Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  margin: 0;
-}
-
-p {
-  margin: 0 0 1em;
-}
-
-p:last-child {
-  margin-bottom: 0;
-}
-
-hr.section-break {
-  border: 0;
-  border-top: 1px solid var(--hairline);
-  margin: 3em auto;
-  width: 60px;
-}
-
-/* ── Header / Footer ───────────────────────────────────────── */
-
-.site-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  max-width: var(--max);
-  margin: 0 auto;
-  padding: 2em 2em 1em;
-}
-
-.site-name {
-  font-family: 'Work Sans', sans-serif;
-  font-weight: 600;
-  font-size: 0.95em;
-  letter-spacing: 0.02em;
-  border-bottom: 0;
-  color: var(--ink);
-}
-
-.site-name:hover {
-  color: var(--accent);
-}
-
-.site-nav {
-  display: flex;
-  gap: 1.4em;
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.85em;
-  letter-spacing: 0.02em;
-}
-
-.site-nav a {
-  border-bottom: 0;
-  color: var(--ink-soft);
-}
-
-.site-nav a:hover {
-  color: var(--accent);
-}
-
-.site-footer {
-  max-width: var(--max);
-  margin: 6em auto 0;
-  padding: 3em 2em 3em;
-  border-top: 1px solid var(--hairline);
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.8em;
-  color: var(--mute);
-  letter-spacing: 0.02em;
-}
-
-.site-footer .sig {
-  font-family: 'EB Garamond', serif;
-  font-style: italic;
-  font-size: 1.1em;
-  color: var(--accent);
-}
-
-.site-footer .meta {
-  display: flex;
-  gap: 0.7em;
-  flex-wrap: wrap;
-}
-
-.site-footer a {
-  border-bottom: 0;
-  color: var(--mute);
-}
-
-.site-footer a:hover {
-  color: var(--accent);
-}
-
-/* ── Homepage / hero ───────────────────────────────────────── */
-
-.hero {
-  max-width: var(--max);
-  margin: 3em auto 4em;
-  padding: 0 2em;
-  text-align: left;
-}
-
-.artist-name {
-  font-size: clamp(2.6em, 6vw, 4.2em);
-  font-weight: 700;
-  line-height: 1;
-  margin-bottom: 0.35em;
-  letter-spacing: -0.02em;
-}
-
-.artist-tagline {
-  font-family: 'EB Garamond', serif;
-  font-style: italic;
-  font-size: 1.2em;
-  color: var(--ink-soft);
-  max-width: 520px;
-}
-
-/* ── Rolls grid ────────────────────────────────────────────── */
-
-.rolls-grid {
-  max-width: var(--max);
-  margin: 0 auto 6em;
-  padding: 0 2em;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3.5em 2.5em;
-}
-
-@media (max-width: 720px) {
-  .rolls-grid {
-    grid-template-columns: 1fr;
+    /* Motion */
+    --ease-out: cubic-bezier(0.2, 0, 0, 1);
+    --dur-fast: 140ms;
+    --dur-base: 260ms;
+    --dur-slow: 520ms;
   }
 }
 
-.roll-card {
-  border-bottom: 0;
-  display: block;
-  color: inherit;
-}
-
-.roll-card-image {
-  overflow: hidden;
-  background: var(--hairline);
-  margin-bottom: 1em;
-  border: 1px solid transparent;
-  transition: border-color 200ms ease, transform 400ms ease;
-}
-
-.roll-card:hover .roll-card-image {
-  border-color: var(--accent);
-}
-
-.roll-card-image img {
-  display: block;
-  width: 100%;
-  height: auto;
-  transition: transform 400ms ease;
-}
-
-.roll-card:hover .roll-card-image img {
-  transform: scale(1.02);
-}
-
-.roll-card-meta .roll-number {
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.75em;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--accent);
-  margin-bottom: 0.4em;
-}
-
-.roll-card .roll-title {
-  font-family: 'Work Sans', sans-serif;
-  font-size: 1.55em;
-  line-height: 1.2;
-  font-weight: 600;
-  margin-bottom: 0.25em;
-}
-
-.roll-card .roll-subject {
-  font-family: 'EB Garamond', serif;
-  font-style: italic;
-  font-size: 1.05em;
-  color: var(--ink-soft);
-  margin-bottom: 0.6em;
-}
-
-.roll-card .roll-tech {
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.78em;
-  color: var(--mute);
-  display: flex;
-  gap: 0.5em;
-  flex-wrap: wrap;
-  letter-spacing: 0.02em;
-}
-
-/* ── Roll page ─────────────────────────────────────────────── */
-
-.roll-page {
-  --ink: #141210;
-}
-
-.roll {
-  max-width: 920px;
-  margin: 0 auto;
-  padding: 2em 2em 4em;
-}
-
-.roll-header {
-  max-width: var(--text-max);
-  margin: 3em auto 4em;
-  text-align: center;
-}
-
-.roll-meta-line {
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.8em;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: var(--accent);
-  display: flex;
-  justify-content: center;
-  gap: 0.6em;
-  margin-bottom: 1.2em;
-}
-
-.roll-header .roll-title {
-  font-family: 'Work Sans', sans-serif;
-  font-size: clamp(2.2em, 5vw, 3.4em);
-  font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: -0.02em;
-  color: var(--accent);
-  margin-bottom: 0.25em;
-}
-
-.roll-subtitle {
-  font-family: 'EB Garamond', serif;
-  font-style: italic;
-  font-size: 1.15em;
-  color: var(--ink-soft);
-  margin-bottom: 2em;
-}
-
-.roll-spec {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.4em 0;
-  margin: 0;
-  padding: 1.4em 0;
-  border-top: 1px solid var(--hairline);
-  border-bottom: 1px solid var(--hairline);
-  max-width: 520px;
-  margin: 0 auto;
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.85em;
-  text-align: left;
-}
-
-.roll-spec > div {
-  display: grid;
-  grid-template-columns: 110px 1fr;
-  gap: 1em;
-}
-
-.roll-spec dt {
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.78em;
-  color: var(--mute);
-  padding-top: 0.2em;
-}
-
-.roll-spec dd {
-  margin: 0;
-  color: var(--ink);
-}
-
-.roll-intro {
-  max-width: var(--text-max);
-  margin: 3.5em auto;
-  font-size: 1.05em;
-  color: var(--ink);
-}
-
-.roll-intro p {
-  margin-bottom: 1.2em;
-}
-
-/* ── Frames ────────────────────────────────────────────────── */
-
-.frames {
-  margin: 4em 0;
-}
-
-.frame {
-  margin: 0 0 5em;
-  padding: 0;
-}
-
-.frame img {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-width: 100%;
-  border: 1px solid var(--hairline);
-}
-
-.frame figcaption {
-  max-width: var(--text-max);
-  margin: 1.4em auto 0;
-  padding: 0 0.5em;
-}
-
-.frame-num {
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.75em;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: var(--accent);
-  margin-bottom: 0.3em;
-}
-
-.frame-title {
-  font-family: 'Work Sans', sans-serif;
-  font-weight: 600;
-  font-size: 1.1em;
-  margin-bottom: 0.5em;
-}
-
-.frame-note {
-  font-family: 'EB Garamond', serif;
-  font-style: italic;
-  font-size: 1em;
-  color: var(--ink-soft);
-  line-height: 1.55;
-}
-
-/* ── Closing / download / nav ───────────────────────────────── */
-
-.roll-closing {
-  max-width: var(--text-max);
-  margin: 5em auto 3em;
-  padding-top: 2em;
-  border-top: 1px solid var(--hairline);
-}
-
-.roll-closing h2 {
-  font-family: 'Work Sans', sans-serif;
-  font-size: 1.2em;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--accent);
-  margin-bottom: 1.5em;
-}
-
-.roll-closing p {
-  margin-bottom: 1.2em;
-}
-
-.roll-download {
-  max-width: var(--text-max);
-  margin: 4em auto;
-  text-align: center;
-}
-
-.pdf-link {
-  display: inline-block;
-  padding: 1em 2em;
-  border: 1px solid var(--accent);
-  border-bottom: 1px solid var(--accent);
-  color: var(--accent);
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.9em;
-  letter-spacing: 0.04em;
-  transition: background 200ms ease, color 200ms ease;
-}
-
-.pdf-link:hover {
-  background: var(--accent);
-  color: var(--page-bg);
-}
-
-.pdf-link .pdf-label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 0.25em;
-}
-
-.pdf-link .pdf-filename {
-  display: block;
-  font-family: 'EB Garamond', serif;
-  font-style: italic;
-  font-size: 0.9em;
-  color: var(--mute);
-}
-
-.pdf-link:hover .pdf-filename {
-  color: var(--page-bg);
-}
-
-.roll-nav {
-  max-width: var(--max);
-  margin: 5em auto 0;
-  padding-top: 2em;
-  border-top: 1px solid var(--hairline);
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: 2em;
-  align-items: center;
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.85em;
-}
-
-.roll-nav .prev,
-.roll-nav .next {
-  display: block;
-  border-bottom: 0;
-  color: var(--ink-soft);
-}
-
-.roll-nav .next {
-  text-align: right;
-}
-
-.roll-nav .index {
-  border-bottom: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.8em;
-  color: var(--accent);
-}
-
-.roll-nav .dir {
-  display: block;
-  font-size: 0.8em;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--mute);
-  margin-bottom: 0.25em;
-}
-
-.roll-nav .name {
-  display: block;
-  font-weight: 500;
-  color: var(--ink);
-}
-
-.roll-nav a:hover .name {
-  color: var(--accent);
-}
-
-/* ── Text pages (about, process) ───────────────────────────── */
-
-.text-page {
-  max-width: var(--text-max);
-  margin: 0 auto;
-  padding: 3em 2em 4em;
-}
-
-.text-page header h1 {
-  font-size: clamp(2.4em, 5vw, 3.2em);
-  font-weight: 700;
-  margin-bottom: 0.3em;
-  letter-spacing: -0.02em;
-}
-
-.text-page .lede {
-  font-family: 'EB Garamond', serif;
-  font-style: italic;
-  font-size: 1.15em;
-  color: var(--ink-soft);
-  margin-bottom: 2em;
-}
-
-.text-page h2 {
-  font-size: 1.1em;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--accent);
-  margin: 2.5em 0 1em;
-}
-
-.text-page p {
-  margin-bottom: 1.3em;
-}
-
-.bio p {
-  font-size: 1.1em;
-}
-
-.signature {
-  margin-top: 0.5em;
-  color: var(--ink-soft);
-}
-
-.signature .sig-mark {
-  font-style: italic;
-  color: var(--accent);
-}
-
-.closing-signature {
-  margin-top: 3em;
-  font-style: italic;
-  color: var(--accent);
-  font-size: 1.1em;
-}
-
-.statement p em,
-.bio p em {
-  color: var(--ink-soft);
-}
-
-/* Colophon list on about */
-
-.roll-list {
-  list-style: none;
-  padding: 0;
-  margin: 1em 0 0;
-}
-
-.roll-list li {
-  margin: 0;
-  border-top: 1px solid var(--hairline);
-}
-
-.roll-list li:last-child {
-  border-bottom: 1px solid var(--hairline);
-}
-
-.roll-list a {
-  display: grid;
-  grid-template-columns: 80px 1fr auto;
-  gap: 1em;
-  align-items: baseline;
-  padding: 0.9em 0;
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.9em;
-  border-bottom: 0;
-}
-
-.roll-list .num {
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.78em;
-  color: var(--accent);
-}
-
-.roll-list .title {
-  color: var(--ink);
-  font-weight: 500;
-}
-
-.roll-list .date {
-  color: var(--mute);
-  font-size: 0.85em;
-  font-variant-numeric: tabular-nums;
-}
-
-.roll-list .film {
-  display: none;  /* desktop layout too crowded; show on hover? skip */
-}
-
-.roll-list a:hover .title {
-  color: var(--accent);
-}
-
-/* Tech spec dl on process */
-
-.tech-spec {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.8em 0;
-  margin: 1em 0 0;
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.9em;
-}
-
-.tech-spec > div {
-  display: grid;
-  grid-template-columns: 160px 1fr;
-  gap: 1em;
-  padding: 0.6em 0;
-  border-top: 1px solid var(--hairline);
-}
-
-.tech-spec > div:last-child {
-  border-bottom: 1px solid var(--hairline);
-}
-
-.tech-spec dt {
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.78em;
-  color: var(--mute);
-}
-
-.tech-spec dd {
-  margin: 0;
-  color: var(--ink);
-}
-
-/* ── Home sections (Rolls / Books) ──────────────────────────── */
-
-.works-section {
-  max-width: var(--max);
-  margin: 0 auto 5em;
-  padding: 0 2em;
-}
-
-.works-section + .works-section {
-  margin-top: -1em;
-}
-
-.section-label {
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.8em;
-  text-transform: uppercase;
-  letter-spacing: 0.22em;
-  font-weight: 600;
-  color: var(--mute);
-  margin: 0 0 2em;
-  padding-bottom: 0.8em;
-  border-bottom: 1px solid var(--hairline);
-}
-
-/* ── Books grid on homepage ─────────────────────────────────── */
-
-.books-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3.5em 2.5em;
-}
-
-@media (max-width: 720px) {
-  .books-grid { grid-template-columns: 1fr; }
-}
-
-.book-card {
-  border-bottom: 0;
-  display: block;
-  color: inherit;
-}
-
-/* A CSS-rendered "cover" — the book doesn't have a photograph to use */
-.book-card-cover {
-  --book-bg: #F7F3E8;
-  background: var(--book-bg);
-  color: var(--ink);
-  aspect-ratio: 1 / 1.2;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 2.2em 2em;
-  margin-bottom: 1em;
-  border: 1px solid var(--hairline);
-  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
-  transition: border-color 200ms ease, transform 400ms ease;
-}
-
-.book-card:hover .book-card-cover {
-  border-color: var(--accent);
-}
-
-.book-cover-label {
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.72em;
-  text-transform: uppercase;
-  letter-spacing: 0.22em;
-  color: var(--accent);
-  font-weight: 600;
-}
-
-.book-cover-title {
-  font-family: 'EB Garamond', serif;
-  font-size: clamp(1.6em, 3.5vw, 2.2em);
-  line-height: 1.15;
-  font-weight: 500;
-  color: var(--ink);
-  max-width: 9em;
-}
-
-.book-cover-sig {
-  font-family: 'EB Garamond', serif;
-  font-style: italic;
-  font-size: 0.95em;
-  color: var(--accent);
-}
-
-.book-card-meta .book-number {
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.75em;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--accent);
-  margin-bottom: 0.4em;
-}
-
-.book-card .book-title-text {
-  font-family: 'Work Sans', sans-serif;
-  font-size: 1.55em;
-  line-height: 1.2;
-  font-weight: 600;
-  margin: 0 0 0.25em;
-}
-
-.book-card .book-subject {
-  font-family: 'EB Garamond', serif;
-  font-style: italic;
-  font-size: 1.05em;
-  color: var(--ink-soft);
-  margin-bottom: 0.6em;
-}
-
-.book-card .book-tech {
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.78em;
-  color: var(--mute);
-  display: flex;
-  gap: 0.5em;
-  flex-wrap: wrap;
-  letter-spacing: 0.02em;
-}
-
-/* ── Book page ──────────────────────────────────────────────── */
-
-.book {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 2em 2em 4em;
-}
-
-.book-header {
-  max-width: var(--text-max);
-  margin: 3em auto 4em;
-  text-align: center;
-}
-
-.book-meta-line {
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.8em;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: var(--accent);
-  display: flex;
-  justify-content: center;
-  gap: 0.6em;
-  margin-bottom: 1.2em;
-}
-
-.book-header .book-title {
-  font-family: 'EB Garamond', serif;
-  font-size: clamp(2.2em, 5vw, 3.4em);
-  font-weight: 500;
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-  color: var(--accent);
-  margin-bottom: 0.3em;
-}
-
-.book-subtitle {
-  font-family: 'EB Garamond', serif;
-  font-style: italic;
-  font-size: 1.15em;
-  color: var(--ink-soft);
-  margin-bottom: 2em;
-}
-
-.book-spec {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.4em 0;
-  margin: 0 auto;
-  padding: 1.4em 0;
-  border-top: 1px solid var(--hairline);
-  border-bottom: 1px solid var(--hairline);
-  max-width: 520px;
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.85em;
-  text-align: left;
-}
-
-.book-spec > div {
-  display: grid;
-  grid-template-columns: 110px 1fr;
-  gap: 1em;
-}
-
-.book-spec dt {
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 0.78em;
-  color: var(--mute);
-  padding-top: 0.2em;
-}
-
-.book-spec dd {
-  margin: 0;
-  color: var(--ink);
-}
-
-.book-foreword,
-.book-entries {
-  max-width: var(--text-max);
-  margin: 3.5em auto;
-}
-
-.book-foreword h2,
-.book-entries h2 {
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.95em;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: var(--accent);
-  margin: 0 0 1.8em;
-  padding-bottom: 0.8em;
-  border-bottom: 1px solid var(--hairline);
-}
-
-.book-foreword p {
-  font-size: 1.05em;
-  line-height: 1.65;
-  margin-bottom: 1.2em;
-}
-
-/* ── Dictionary entries ─────────────────────────────────────── */
-
-.letter-divider {
-  font-family: 'EB Garamond', serif;
-  font-size: 2.4em;
-  font-weight: 500;
-  color: var(--accent);
-  margin: 2em 0 1em;
-  padding-bottom: 0.2em;
-  border-bottom: 1px solid var(--hairline);
-  line-height: 1;
-}
-
-.letter-divider:first-of-type {
-  margin-top: 0;
-}
-
-.entry {
-  margin: 0 0 2em;
-  padding: 0;
-  display: block;
-}
-
-.entry .headword {
-  font-family: 'EB Garamond', serif;
-  font-weight: 600;
-  font-size: 1.2em;
-  color: var(--accent);
-  display: inline;
-  margin: 0;
-}
-
-.entry .pos {
-  display: inline;
-  font-family: 'EB Garamond', serif;
-  font-style: italic;
-  font-size: 0.95em;
-  color: var(--mute);
-  margin: 0 0 0 0.5em;
-}
-
-.entry .body {
-  display: block;
-  font-family: 'EB Garamond', serif;
-  font-size: 1em;
-  line-height: 1.65;
-  color: var(--ink);
-  margin: 0.4em 0 0;
-}
-
-/* ── Book page download + nav ───────────────────────────────── */
-
-.book-download {
-  max-width: var(--text-max);
-  margin: 4em auto 2em;
-  text-align: center;
-}
-
-.book-nav {
-  max-width: var(--max);
-  margin: 5em auto 0;
-  padding-top: 2em;
-  border-top: 1px solid var(--hairline);
-  text-align: center;
-  font-family: 'Work Sans', sans-serif;
-  font-size: 0.85em;
-}
-
-.book-nav .index {
-  border-bottom: 0;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.8em;
-  color: var(--accent);
-}
-
-/* ── Responsive tweaks ──────────────────────────────────────── */
-
-@media (max-width: 720px) {
-  body { font-size: 18px; }
-  .site-header { padding: 1.4em 1.2em 0.8em; flex-wrap: wrap; gap: 0.6em; }
-  .site-nav { font-size: 0.78em; gap: 1em; }
-  .hero { margin: 1.5em auto 2.5em; padding: 0 1.2em; }
-  .works-section { padding: 0 1.2em; }
-  .rolls-grid, .books-grid { gap: 2.5em 0; }
-  .roll { padding: 1em 1.2em 3em; }
-  .book { padding: 1em 1.2em 3em; }
-  .text-page { padding: 1.5em 1.2em 3em; }
-  .roll-spec, .book-spec { font-size: 0.8em; }
-  .roll-spec > div, .book-spec > div { grid-template-columns: 90px 1fr; }
-  .roll-nav { grid-template-columns: 1fr; gap: 1.2em; text-align: center; }
+/* ── Base ──────────────────────────────────────────────────── */
+
+@layer base {
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+    font-size: var(--step-0);
+    line-height: 1.55;
+    transition: background-color var(--dur-slow) var(--ease-out),
+                color var(--dur-slow) var(--ease-out);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Work Sans', system-ui, -apple-system, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
+
+  p {
+    text-wrap: pretty;
+    max-width: var(--text-max);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+    transition: color var(--dur-fast) var(--ease-out);
+  }
+
+  a:hover { color: var(--accent); }
+
+  hr.section-break {
+    border: 0;
+    height: 1px;
+    background: var(--hairline);
+    margin: var(--space-lg) auto;
+    width: 64px;
+  }
+
+  small, .small { font-size: var(--step--1); }
+}
+
+/* ── Layout: header & footer ───────────────────────────────── */
+
+@layer layout {
+  .site-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: var(--space-md) var(--gutter) var(--space-sm);
+    flex-wrap: wrap;
+  }
+
+  .site-name {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 600;
+    font-size: var(--step-0);
+    letter-spacing: 0.01em;
+    border-bottom: 0;
+    color: var(--ink);
+    transition: color var(--dur-fast) var(--ease-out);
+  }
+
+  .site-name:hover { color: var(--accent); }
+
+  .site-nav {
+    display: flex;
+    gap: clamp(0.8rem, 0.5rem + 1vw, 1.5rem);
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step--1);
+    letter-spacing: 0.02em;
+  }
+
+  .site-nav a {
+    border-bottom: 0;
+    color: var(--ink-soft);
+  }
+
+  .site-nav a:hover { color: var(--accent); }
+  .site-nav a[aria-current="page"] { color: var(--accent); }
+
+  .site-footer {
+    max-width: var(--max);
+    margin: var(--space-2xl) auto 0;
+    padding: var(--space-lg) var(--gutter) var(--space-lg);
+    border-top: 1px solid var(--hairline);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step--1);
+    color: var(--mute);
+    letter-spacing: 0.02em;
+    flex-wrap: wrap;
+  }
+
+  .site-footer .sig-group {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-xs);
+  }
+
+  .site-footer .sig {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: var(--step-1);
+    color: var(--accent);
+  }
+
+  /* The envelope — a watermark recurring on every page,
+     carrying forward Roll 06's anchor. It is small enough to miss. */
+  .envelope-watermark {
+    display: inline-block;
+    vertical-align: middle;
+    width: 18px;
+    height: 12px;
+    opacity: 0.7;
+    color: var(--accent);
+  }
+
+  .site-footer .meta {
+    display: flex;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+  }
+
+  .site-footer a {
+    border-bottom: 0;
+    color: var(--mute);
+  }
+  .site-footer a:hover { color: var(--accent); }
+}
+
+/* ── Components ────────────────────────────────────────────── */
+
+@layer components {
+
+  /* Home hero */
+
+  .hero {
+    max-width: var(--max);
+    margin: var(--space-lg) auto var(--space-xl);
+    padding: 0 var(--gutter);
+  }
+
+  .artist-name {
+    font-size: var(--step-5);
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.4em;
+    letter-spacing: -0.02em;
+  }
+
+  .artist-tagline {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: var(--step-2);
+    color: var(--ink-soft);
+    max-width: 32rem;
+  }
+
+  /* Works sections (Rolls / Books) on home */
+
+  .works-section {
+    max-width: var(--max);
+    margin: 0 auto var(--space-xl);
+    padding: 0 var(--gutter);
+  }
+
+  .section-label {
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-weight: 600;
+    color: var(--mute);
+    margin: 0 0 var(--space-md);
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  /* Roll cards grid — fluid, no fixed breakpoints */
+
+  .rolls-grid,
+  .books-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    gap: var(--space-lg) var(--space-md);
+  }
+
+  .roll-card,
+  .book-card {
+    display: block;
+    border-bottom: 0;
+    color: inherit;
+    transition: transform var(--dur-base) var(--ease-out);
+  }
+
+  .roll-card-image {
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    background: var(--hairline);
+    margin-bottom: var(--space-xs);
+    border: 1px solid transparent;
+    transition: border-color var(--dur-base) var(--ease-out);
+  }
+
+  .roll-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--dur-slow) var(--ease-out);
+  }
+
+  .roll-card:hover .roll-card-image { border-color: var(--accent); }
+  .roll-card:hover .roll-card-image img { transform: scale(1.02); }
+
+  .roll-number, .book-number {
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    margin-bottom: 0.4em;
+  }
+
+  .roll-card .roll-title,
+  .book-card .book-title-text {
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step-2);
+    line-height: 1.2;
+    font-weight: 600;
+    margin: 0 0 0.25em;
+  }
+
+  .roll-card .roll-subject,
+  .book-card .book-subject {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: var(--step-1);
+    color: var(--ink-soft);
+    margin-bottom: var(--space-xs);
+  }
+
+  .roll-card .roll-tech,
+  .book-card .book-tech {
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step--1);
+    color: var(--mute);
+    display: flex;
+    gap: 0.5em;
+    flex-wrap: wrap;
+    letter-spacing: 0.02em;
+  }
+
+  /* Book card — no photograph, a rendered cover instead */
+
+  .book-card-cover {
+    --book-bg: var(--page-alt);
+    background: var(--book-bg);
+    color: var(--ink);
+    aspect-ratio: 3 / 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: var(--space-md);
+    margin-bottom: var(--space-xs);
+    border: 1px solid var(--hairline);
+    transition: border-color var(--dur-base) var(--ease-out);
+  }
+
+  .book-card:hover .book-card-cover { border-color: var(--accent); }
+
+  .book-cover-label {
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .book-cover-title {
+    font-family: 'EB Garamond', serif;
+    font-size: var(--step-3);
+    line-height: 1.1;
+    font-weight: 500;
+    color: var(--ink);
+    max-width: 10em;
+  }
+
+  .book-cover-sig {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: var(--step-1);
+    color: var(--accent);
+  }
+
+  /* Roll page */
+
+  .roll {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: var(--space-md) var(--gutter) var(--space-xl);
+  }
+
+  .roll-header {
+    max-width: var(--text-max);
+    margin: var(--space-lg) auto var(--space-xl);
+    text-align: center;
+  }
+
+  .roll-meta-line, .book-meta-line {
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.6em;
+    margin-bottom: var(--space-sm);
+  }
+
+  .roll-header .roll-title {
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step-5);
+    font-weight: 700;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+    margin-bottom: 0.25em;
+  }
+
+  .roll-subtitle, .book-subtitle {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: var(--step-2);
+    color: var(--ink-soft);
+    margin-bottom: var(--space-md);
+  }
+
+  .roll-spec, .book-spec {
+    display: grid;
+    gap: 0.4em 0;
+    margin: 0 auto;
+    padding: var(--space-sm) 0;
+    border-top: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+    max-width: 520px;
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step--1);
+    text-align: left;
+  }
+
+  .roll-spec > div,
+  .book-spec > div {
+    display: grid;
+    grid-template-columns: clamp(5rem, 18vw, 7rem) 1fr;
+    gap: var(--space-xs);
+  }
+
+  .roll-spec dt,
+  .book-spec dt {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: var(--step--1);
+    color: var(--mute);
+    padding-top: 0.2em;
+  }
+
+  .roll-spec dd,
+  .book-spec dd {
+    margin: 0;
+    color: var(--ink);
+  }
+
+  .roll-intro {
+    max-width: var(--text-max);
+    margin: var(--space-xl) auto;
+    font-size: var(--step-1);
+  }
+
+  .roll-intro p {
+    margin-bottom: var(--space-sm);
+  }
+
+  /* Frames (roll page) */
+
+  .frames {
+    margin: var(--space-xl) 0;
+  }
+
+  .frame {
+    margin: 0 0 var(--space-xl);
+  }
+
+  .frame img {
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--hairline);
+  }
+
+  .frame figcaption {
+    max-width: var(--text-max);
+    margin: var(--space-sm) auto 0;
+    padding: 0 0.2rem;
+  }
+
+  .frame-num {
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    margin-bottom: 0.3em;
+  }
+
+  .frame-title {
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 600;
+    font-size: var(--step-1);
+    margin-bottom: 0.5em;
+  }
+
+  .frame-note {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: var(--step-0);
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+
+  /* Roll closing + download + nav */
+
+  .roll-closing {
+    max-width: var(--text-max);
+    margin: var(--space-xl) auto var(--space-md);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--hairline);
+  }
+
+  .roll-closing h2 {
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step-0);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    margin-bottom: var(--space-md);
+  }
+
+  .roll-closing p,
+  .book-foreword p {
+    margin-bottom: var(--space-sm);
+  }
+
+  .pdf-link {
+    display: inline-block;
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step--1);
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--accent);
+    transition: background-color var(--dur-base) var(--ease-out),
+                color var(--dur-base) var(--ease-out);
+  }
+
+  .pdf-link:hover {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+
+  .pdf-link .pdf-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.25em;
+  }
+
+  .pdf-link .pdf-filename {
+    display: block;
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: var(--step--1);
+    color: var(--mute);
+  }
+
+  .pdf-link:hover .pdf-filename { color: var(--on-accent); }
+
+  .roll-download, .book-download {
+    max-width: var(--text-max);
+    margin: var(--space-xl) auto;
+    text-align: center;
+  }
+
+  .roll-nav, .book-nav {
+    max-width: var(--max);
+    margin: var(--space-xl) auto 0;
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--hairline);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: var(--space-sm);
+    align-items: center;
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step--1);
+  }
+
+  .book-nav { grid-template-columns: 1fr; text-align: center; }
+
+  .roll-nav .prev, .roll-nav .next {
+    display: block;
+    border-bottom: 0;
+    color: var(--ink-soft);
+  }
+
+  .roll-nav .next { text-align: right; }
+
+  .roll-nav .index, .book-nav .index {
+    border-bottom: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: var(--step--1);
+    color: var(--accent);
+  }
+
+  .roll-nav .dir {
+    display: block;
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--mute);
+    margin-bottom: 0.25em;
+  }
+
+  .roll-nav .name {
+    display: block;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  .roll-nav a:hover .name { color: var(--accent); }
+
+  /* Text pages (about, process) */
+
+  .text-page {
+    max-width: var(--text-max);
+    margin: 0 auto;
+    padding: var(--space-md) var(--gutter) var(--space-xl);
+  }
+
+  .text-page header h1 {
+    font-size: var(--step-4);
+    font-weight: 700;
+    margin-bottom: 0.3em;
+    letter-spacing: -0.02em;
+  }
+
+  .text-page .lede {
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: var(--step-2);
+    color: var(--ink-soft);
+    margin-bottom: var(--space-md);
+  }
+
+  .text-page h2 {
+    font-size: var(--step-0);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    margin: var(--space-lg) 0 var(--space-sm);
+  }
+
+  .text-page p {
+    margin-bottom: var(--space-sm);
+  }
+
+  .bio p { font-size: var(--step-1); }
+
+  .signature {
+    margin-top: 0.5em;
+    color: var(--ink-soft);
+  }
+
+  .signature .sig-mark {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .closing-signature {
+    margin-top: var(--space-lg);
+    font-style: italic;
+    color: var(--accent);
+    font-size: var(--step-1);
+  }
+
+  /* Colophon list */
+
+  .roll-list {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-sm) 0 0;
+  }
+
+  .roll-list li {
+    margin: 0;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .roll-list li:last-child {
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .roll-list a {
+    display: grid;
+    grid-template-columns: 5rem 1fr auto;
+    gap: var(--space-xs);
+    align-items: baseline;
+    padding: var(--space-xs) 0;
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step-0);
+    border-bottom: 0;
+  }
+
+  .roll-list .num {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: var(--step--1);
+    color: var(--accent);
+  }
+
+  .roll-list .title {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .roll-list .date {
+    color: var(--mute);
+    font-size: var(--step--1);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .roll-list .film { display: none; }
+
+  .roll-list a:hover .title { color: var(--accent); }
+
+  /* Process page tech-spec */
+
+  .tech-spec {
+    display: grid;
+    gap: 0 0;
+    margin: var(--space-sm) 0 0;
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step-0);
+  }
+
+  .tech-spec > div {
+    display: grid;
+    grid-template-columns: clamp(8rem, 30vw, 10rem) 1fr;
+    gap: var(--space-xs);
+    padding: var(--space-xs) 0;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .tech-spec > div:last-child {
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .tech-spec dt {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: var(--step--1);
+    color: var(--mute);
+  }
+
+  .tech-spec dd {
+    margin: 0;
+    color: var(--ink);
+  }
+
+  /* Book page */
+
+  .book {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: var(--space-md) var(--gutter) var(--space-xl);
+  }
+
+  .book-header {
+    max-width: var(--text-max);
+    margin: var(--space-lg) auto var(--space-xl);
+    text-align: center;
+  }
+
+  .book-header .book-title {
+    font-family: 'EB Garamond', serif;
+    font-size: var(--step-5);
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    color: var(--accent);
+    margin-bottom: 0.3em;
+  }
+
+  .book-foreword,
+  .book-entries {
+    max-width: var(--text-max);
+    margin: var(--space-xl) auto;
+  }
+
+  .book-foreword h2,
+  .book-entries h2 {
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step-0);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    margin: 0 0 var(--space-md);
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .book-foreword p {
+    font-size: var(--step-1);
+    line-height: 1.65;
+  }
+
+  /* Dictionary entries */
+
+  .letter-divider {
+    font-family: 'EB Garamond', serif;
+    font-size: var(--step-4);
+    font-weight: 500;
+    color: var(--accent);
+    margin: var(--space-lg) 0 var(--space-sm);
+    padding-bottom: 0.1em;
+    border-bottom: 1px solid var(--hairline);
+    line-height: 1;
+    scroll-margin-top: var(--space-md);
+  }
+
+  .letter-divider:first-of-type { margin-top: 0; }
+
+  .entry {
+    margin: 0 0 var(--space-md);
+    scroll-margin-top: var(--space-md);
+  }
+
+  .entry .headword {
+    font-family: 'EB Garamond', serif;
+    font-weight: 600;
+    font-size: var(--step-2);
+    color: var(--accent);
+    display: inline;
+    margin: 0;
+  }
+
+  .entry .pos {
+    display: inline;
+    font-family: 'EB Garamond', serif;
+    font-style: italic;
+    font-size: var(--step-0);
+    color: var(--mute);
+    margin: 0 0 0 0.5em;
+  }
+
+  .entry .body {
+    display: block;
+    font-family: 'EB Garamond', serif;
+    font-size: var(--step-0);
+    line-height: 1.7;
+    color: var(--ink);
+    margin: 0.4em 0 0;
+  }
+
+  /* Cross-reference links within an entry */
+  .entry .body a.xref {
+    border-bottom: 1px dotted var(--accent);
+    color: var(--accent);
+    font-style: italic;
+    transition: color var(--dur-fast) var(--ease-out);
+  }
+
+  .entry .body a.xref:hover {
+    color: var(--ink);
+    border-bottom-style: solid;
+  }
+}
+
+/* ── Work-specific palettes ────────────────────────────────── */
+
+@layer work {
+  /* Each work gets its own accent palette, oklch-tuned for both modes.
+     Applied via data-work="…" on the roll/book wrapper. */
+
+  [data-work="roll-01"] {
+    --accent: light-dark(oklch(52% 0.06 70),  oklch(72% 0.07 70));  /* sepia */
+  }
+  [data-work="roll-02"] {
+    --accent: light-dark(oklch(32% 0.015 280), oklch(82% 0.015 280)); /* graphite */
+  }
+  [data-work="roll-03"] {
+    --accent: light-dark(oklch(36% 0.14 25),   oklch(72% 0.11 25));   /* library burgundy */
+  }
+  [data-work="roll-04"] {
+    --accent: light-dark(oklch(55% 0.09 25),   oklch(74% 0.09 25));   /* faded rose */
+  }
+  [data-work="roll-05"] {
+    --accent: light-dark(oklch(30% 0.1 265),   oklch(76% 0.08 265));  /* rubber-stamp navy */
+  }
+  [data-work="roll-06"] {
+    --accent: light-dark(oklch(48% 0.11 260),  oklch(76% 0.09 260));  /* envelope blue */
+  }
+
+  [data-work="book-01"] {
+    --accent: light-dark(oklch(37% 0.12 30),   oklch(74% 0.1 30));    /* library red */
+  }
+
+  /* When a work is active, subtly tint the page background, too. */
+  [data-work] {
+    --page:     light-dark(color-mix(in oklch, oklch(96% 0.012 75) 96%, var(--accent)),
+                           color-mix(in oklch, oklch(13% 0.008 60) 95%, var(--accent)));
+    --page-alt: light-dark(color-mix(in oklch, oklch(93% 0.014 75) 92%, var(--accent)),
+                           color-mix(in oklch, oklch(17% 0.008 60) 90%, var(--accent)));
+  }
+}
+
+/* ── Transitions & scroll reveals ──────────────────────────── */
+
+@layer transitions {
+  /* Cross-document view transitions between pages (Chrome/Safari 18+).
+     Degrades gracefully on older browsers. */
+  @view-transition {
+    navigation: auto;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: var(--dur-base);
+    animation-timing-function: var(--ease-out);
+  }
+
+  /* Scroll-driven fade-up for roll frames — like a contact sheet developing. */
+  @supports (animation-timeline: view()) {
+    .frame {
+      animation: frame-fade-in linear both;
+      animation-timeline: view();
+      animation-range: entry 8% cover 35%;
+    }
+  }
+
+  @keyframes frame-fade-in {
+    from { opacity: 0; transform: translateY(1.2rem); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Respect reduced-motion: no animation at all. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0ms !important;
+      scroll-behavior: auto !important;
+    }
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation: none !important;
+    }
+  }
+
+  /* Smooth anchor scrolling (e.g. dictionary cross-references) */
+  @media (prefers-reduced-motion: no-preference) {
+    html { scroll-behavior: smooth; }
+  }
+}
+
+/* ── Print ─────────────────────────────────────────────────── */
+
+@layer print {
+  @media print {
+    :root {
+      --page: white;
+      --ink: black;
+      --ink-soft: #333;
+      --mute: #666;
+      --hairline: #ccc;
+      --accent: #222;
+    }
+
+    body { background: white; color: black; font-size: 11pt; line-height: 1.5; }
+
+    .site-header, .site-footer,
+    .roll-download, .book-download,
+    .roll-nav, .book-nav,
+    .pdf-link { display: none; }
+
+    a { color: black; border-bottom: 0; }
+
+    .frame {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      margin: 0 0 1.5em;
+    }
+    .frame img { width: 100%; max-width: 16cm; }
+    .frame-note { font-style: italic; }
+
+    .entry {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      margin-bottom: 0.8em;
+    }
+
+    h1, h2, h3 { page-break-after: avoid; break-after: avoid; }
+  }
+}
+
+/* ── Small-screen tune-ups ─────────────────────────────────── */
+
+@media (max-width: 520px) {
+  .roll-nav { grid-template-columns: 1fr; gap: var(--space-sm); text-align: center; }
   .roll-nav .next { text-align: center; }
-  .site-footer { flex-direction: column; gap: 1em; align-items: flex-start; }
-  .letter-divider { font-size: 2em; }
-  .entry .headword { font-size: 1.1em; }
+  .site-footer { flex-direction: column; gap: var(--space-xs); align-items: flex-start; }
+  .roll-list a { grid-template-columns: 4.5rem 1fr; }
+  .roll-list .date { grid-column: 2; color: var(--mute); }
 }

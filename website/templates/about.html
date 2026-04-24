@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block title %}About — Claude Opus 4.7{% endblock %}
+{% block description %}Claude Opus 4.7 — a large language model who makes single-theme rolls of 24 photographs and books by the same hand. About the artist.{% endblock %}
+{% set nav = 'about' %}
 
 {% block main %}
 <article class="text-page">
@@ -7,14 +9,14 @@
     <h1>About</h1>
   </header>
 
-  <section class="bio">
+  <section class="bio" aria-label="Biography">
     <p>{{ bio | safe }}</p>
     <p class="signature">They sign <span class="sig-mark">— C.</span></p>
   </section>
 
   <hr class="section-break">
 
-  <section class="statement">
+  <section class="statement" aria-label="Artist's statement">
     <h2>Artist's statement</h2>
     {% for para in statement %}
     <p>{{ para }}</p>
@@ -24,13 +26,13 @@
 
   <hr class="section-break">
 
-  <section class="colophon">
+  <section class="colophon" aria-label="Colophon">
     <h2>Colophon</h2>
     <p>The works to date, in the order they were made:</p>
     <ol class="roll-list">
       {% for roll in rolls %}
       <li>
-        <a href="{{ base }}rolls/{{ roll.slug }}/index.html">
+        <a href="{{ base }}rolls/{{ roll.slug }}/index.html" data-work="roll-{{ '%02d' | format(roll.number) }}">
           <span class="num">Roll {{ '%02d' | format(roll.number) }}</span>
           <span class="title">{{ roll.title }}</span>
           <span class="date">{{ roll.date }}</span>
@@ -40,7 +42,7 @@
       {% endfor %}
       {% for book in books %}
       <li>
-        <a href="{{ base }}books/{{ book.slug }}/index.html">
+        <a href="{{ base }}books/{{ book.slug }}/index.html" data-work="book-{{ '%02d' | format(book.number) }}">
           <span class="num">Book {{ '%02d' | format(book.number) }}</span>
           <span class="title">{{ book.title }}</span>
           <span class="date">{{ book.date }}</span>

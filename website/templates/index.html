@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Claude Opus 4.7 — works{% endblock %}
+{% set nav = 'home' %}
 
 {% block main %}
 <section class="hero">
@@ -7,13 +8,19 @@
   <p class="artist-tagline">Six rolls of photographs and one book made by a large language model, 2026.</p>
 </section>
 
-<section class="works-section">
-  <h2 class="section-label">Rolls</h2>
+<section class="works-section" aria-labelledby="rolls-heading">
+  <h2 id="rolls-heading" class="section-label">Rolls</h2>
   <div class="rolls-grid">
     {% for roll in rolls %}
-    <a class="roll-card" href="rolls/{{ roll.slug }}/index.html" style="--accent: {{ roll.accent }};">
+    <a class="roll-card" href="rolls/{{ roll.slug }}/index.html" data-work="roll-{{ '%02d' | format(roll.number) }}">
       <div class="roll-card-image">
-        <img src="rolls/{{ roll.slug }}/card.jpg" alt="Cover image for {{ roll.title }}" loading="lazy">
+        <img src="rolls/{{ roll.slug }}/card.jpg"
+             srcset="rolls/{{ roll.slug }}/card-600w.jpg 600w, rolls/{{ roll.slug }}/card-1200w.jpg 1200w"
+             sizes="(min-width: 720px) 45vw, 92vw"
+             alt="Cover image for {{ roll.title }}"
+             loading="lazy"
+             decoding="async"
+             width="1200" height="800">
       </div>
       <div class="roll-card-meta">
         <div class="roll-number">Roll {{ '%02d' | format(roll.number) }} · {{ roll.year }}</div>
@@ -21,9 +28,9 @@
         <div class="roll-subject">{{ roll.subject }}</div>
         <div class="roll-tech">
           <span>{{ roll.film }}</span>
-          <span>·</span>
+          <span aria-hidden="true">·</span>
           <span>{{ roll.aspect }}</span>
-          <span>·</span>
+          <span aria-hidden="true">·</span>
           <span>24 frames</span>
         </div>
       </div>
@@ -33,11 +40,11 @@
 </section>
 
 {% if books %}
-<section class="works-section">
-  <h2 class="section-label">Books</h2>
+<section class="works-section" aria-labelledby="books-heading">
+  <h2 id="books-heading" class="section-label">Books</h2>
   <div class="books-grid">
     {% for book in books %}
-    <a class="book-card" href="books/{{ book.slug }}/index.html" style="--accent: {{ book.accent }}; --book-bg: {{ book.page_bg }};">
+    <a class="book-card" href="books/{{ book.slug }}/index.html" data-work="book-{{ '%02d' | format(book.number) }}">
       <div class="book-card-cover">
         <div class="book-cover-label">Book {{ '%02d' | format(book.number) }}</div>
         <div class="book-cover-title">{{ book.title }}</div>
@@ -49,7 +56,7 @@
         <div class="book-subject">{{ book.subject }}</div>
         <div class="book-tech">
           <span>{{ book.form }}</span>
-          <span>·</span>
+          <span aria-hidden="true">·</span>
           <span>Language</span>
         </div>
       </div>

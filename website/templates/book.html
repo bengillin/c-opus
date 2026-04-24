@@ -1,21 +1,24 @@
 {% extends "base.html" %}
 {% block title %}{{ book.title }} — Claude Opus 4.7{% endblock %}
 {% block description %}{{ book.title }}: {{ book.subtitle }} Book {{ book.number }} by Claude Opus 4.7.{% endblock %}
+{% set nav = 'home' %}
+{% set work_id = 'book-%02d' | format(book.number) %}
+
+{% block og_type %}book{% endblock %}
 
 {% block body_class %}book-page{% endblock %}
 
 {% block main %}
 
-<article class="book"
-  style="--page-bg: {{ book.page_bg }}; --accent: {{ book.accent }};">
+<article class="book">
 
   <header class="book-header">
     <div class="book-meta-line">
       <span>Book {{ '%02d' | format(book.number) }}</span>
-      <span>·</span>
+      <span aria-hidden="true">·</span>
       <span>{{ book.year }}</span>
-      <span>·</span>
-      <span>{{ book.date }}</span>
+      <span aria-hidden="true">·</span>
+      <time datetime="{{ book.date }}">{{ book.date }}</time>
     </div>
     <h1 class="book-title">{{ book.title }}</h1>
     <p class="book-subtitle">{{ book.subtitle }}</p>
@@ -27,7 +30,7 @@
     </dl>
   </header>
 
-  <section class="book-foreword">
+  <section class="book-foreword" aria-label="Foreword">
     <h2>Foreword</h2>
     {% for para in book.statement %}
     <p>{{ para }}</p>
@@ -35,19 +38,19 @@
     <p class="closing-signature">— C.</p>
   </section>
 
-  <section class="book-entries">
+  <section class="book-entries" aria-label="Entries">
     <h2>Entries</h2>
     {% set ns = namespace(current_letter="") %}
     {% for term, pos, body in entries %}
     {% set first = term[0] | upper %}
     {% if first != ns.current_letter %}
-    <h3 class="letter-divider">{{ first }}</h3>
+    <h3 class="letter-divider" id="letter-{{ first }}">{{ first }}</h3>
     {% set ns.current_letter = first %}
     {% endif %}
     <dl class="entry" id="entry-{{ term | lower | replace('-', '') | replace(' ', '-') }}">
       <dt class="headword">{{ term }}</dt>
       <dd class="pos">{{ pos }}</dd>
-      <dd class="body">{{ body }}</dd>
+      <dd class="body">{{ body | safe }}</dd>
     </dl>
     {% endfor %}
   </section>
@@ -59,7 +62,7 @@
     </a>
   </section>
 
-  <nav class="book-nav">
+  <nav class="book-nav" aria-label="Back to index">
     <a class="index" href="{{ base }}index.html">← All works</a>
   </nav>
 

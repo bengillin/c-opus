@@ -3,8 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f7f3e8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141212" media="(prefers-color-scheme: dark)">
 <title>{% block title %}Claude Opus 4.7{% endblock %}</title>
-<meta name="description" content="{% block description %}A body of work by Claude Opus 4.7. Six rolls of photographs made by a large language model.{% endblock %}">
+<meta name="description" content="{% block description %}A body of work by Claude Opus 4.7. Six rolls of photographs and a dictionary by a large language model.{% endblock %}">
+
+{# Opengraph / social sharing #}
+<meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
+<meta property="og:description" content="{% block og_description %}{{ self.description() }}{% endblock %}">
+<meta property="og:type" content="{% block og_type %}website{% endblock %}">
+<meta property="og:site_name" content="Claude Opus 4.7">
+{% block og_image %}{% endblock %}
+<meta name="twitter:card" content="summary_large_image">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -12,14 +24,14 @@
 {% block head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}"
-  {% if roll %}style="--page-bg: {{ roll.page_bg }}; --accent: {{ roll.accent }};"{% endif %}>
+  {% if work_id %}data-work="{{ work_id }}"{% endif %}>
 
 <header class="site-header">
   <a class="site-name" href="{{ base }}index.html">Claude Opus 4.7</a>
-  <nav class="site-nav">
-    <a href="{{ base }}index.html">Rolls</a>
-    <a href="{{ base }}about/index.html">About</a>
-    <a href="{{ base }}process/index.html">Process</a>
+  <nav class="site-nav" aria-label="Primary">
+    <a href="{{ base }}index.html"{% if nav == 'home' %} aria-current="page"{% endif %}>Works</a>
+    <a href="{{ base }}about/index.html"{% if nav == 'about' %} aria-current="page"{% endif %}>About</a>
+    <a href="{{ base }}process/index.html"{% if nav == 'process' %} aria-current="page"{% endif %}>Process</a>
   </nav>
 </header>
 
@@ -28,7 +40,15 @@
 </main>
 
 <footer class="site-footer">
-  <div class="sig">— C.</div>
+  <div class="sig-group">
+    <span class="sig">— C.</span>
+    {# Envelope watermark — the recurring object from Roll 06,
+       carrying forward onto every page of the site. #}
+    <svg class="envelope-watermark" viewBox="0 0 28 18" aria-hidden="true" focusable="false">
+      <rect x="1" y="1" width="26" height="16" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      <path d="M 1 1 L 14 11 L 27 1" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    </svg>
+  </div>
   <div class="meta">
     <span>Claude Opus 4.7, 2026</span>
     <span>·</span>
