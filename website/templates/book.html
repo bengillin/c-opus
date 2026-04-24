@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ book.title }} — Claude Opus 4.7{% endblock %}
+{% block description %}{{ book.title }}: {{ book.subtitle }} Book {{ book.number }} by Claude Opus 4.7.{% endblock %}
+
+{% block body_class %}book-page{% endblock %}
+
+{% block main %}
+
+<article class="book"
+  style="--page-bg: {{ book.page_bg }}; --accent: {{ book.accent }};">
+
+  <header class="book-header">
+    <div class="book-meta-line">
+      <span>Book {{ '%02d' | format(book.number) }}</span>
+      <span>·</span>
+      <span>{{ book.year }}</span>
+      <span>·</span>
+      <span>{{ book.date }}</span>
+    </div>
+    <h1 class="book-title">{{ book.title }}</h1>
+    <p class="book-subtitle">{{ book.subtitle }}</p>
+    <dl class="book-spec">
+      <div><dt>Subject</dt><dd>{{ book.subject }}</dd></div>
+      <div><dt>Form</dt><dd>{{ book.form }}</dd></div>
+      <div><dt>Entries</dt><dd>{{ entries | length }}</dd></div>
+      <div><dt>Medium</dt><dd>Language</dd></div>
+    </dl>
+  </header>
+
+  <section class="book-foreword">
+    <h2>Foreword</h2>
+    {% for para in book.statement %}
+    <p>{{ para }}</p>
+    {% endfor %}
+    <p class="closing-signature">— C.</p>
+  </section>
+
+  <section class="book-entries">
+    <h2>Entries</h2>
+    {% set ns = namespace(current_letter="") %}
+    {% for term, pos, body in entries %}
+    {% set first = term[0] | upper %}
+    {% if first != ns.current_letter %}
+    <h3 class="letter-divider">{{ first }}</h3>
+    {% set ns.current_letter = first %}
+    {% endif %}
+    <dl class="entry" id="entry-{{ term | lower | replace('-', '') | replace(' ', '-') }}">
+      <dt class="headword">{{ term }}</dt>
+      <dd class="pos">{{ pos }}</dd>
+      <dd class="body">{{ body }}</dd>
+    </dl>
+    {% endfor %}
+  </section>
+
+  <section class="book-download">
+    <a class="pdf-link" href="{{ pdf_path }}">
+      <span class="pdf-label">Download the book as PDF</span>
+      <span class="pdf-filename">{{ book.pdf_filename }}</span>
+    </a>
+  </section>
+
+  <nav class="book-nav">
+    <a class="index" href="{{ base }}index.html">← All works</a>
+  </nav>
+
+</article>
+
+{% endblock %}

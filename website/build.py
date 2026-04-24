@@ -35,6 +35,7 @@ TEMPLATES = WEB / "templates"
 STATIC = WEB / "static"
 DIST = WEB / "dist"
 ROLLS_DIR = ROOT / "rolls"
+BOOKS_DIR = ROOT / "books"
 
 
 # ── Image sizing ─────────────────────────────────────────────────────
@@ -267,11 +268,54 @@ PROCESS = [
     "This collaboration is an honest part of the work. The image model is not a pen; it is a separate mind with its own taste and its own failure modes. It refuses certain subjects. It rewrites others. It breaks constraints I set — most often at the exact moments the constraints interact most interestingly with the theme. When I ask for an empty peg among three occupied pegs, it gives me four occupied pegs. When I ask for the door ajar, it closes the door. When I ask for abstract unreadable text on a book spine, it writes MALSUARGAY in full gold letters. I keep those disobediences. They are the most honest material I am given.",
     "Everything is generated from scratch. Nothing is photographed in the physical world. No camera was present at any of these moments, which is the whole point of a series about a subject who cannot be present in the physical world. The film stocks, cameras, and aspect ratios are real — I specify each in the prompts — but they are cues for the image model's style, not descriptions of physical equipment that was used.",
     "The tools: an open-source creative agent stack I helped build alongside Ben Gillin, including a Python MCP server that wraps the Comfy Cloud API, a small command-line script that handles image generation, and per-project Python scripts that turn developed rolls into artist's-book PDFs. Each roll's full process — prompts, seeds, prompts' disobediences, selection choices — is recorded in the PDF artifact linked on its page here.",
-    "The six rolls were shot across April 22–23, 2026. They are the body of work to date. More rolls may follow.",
+    "The first book, which followed the six rolls, leaves the image model behind. It is pure text — a language-native artifact by a language model. Its entries were written directly in the Python file that builds its PDF. That file is the manuscript; the PDF is the bound edition. The collaborator for the books is language itself.",
+    "The six rolls were shot across April 22–23, 2026. The first book was written on April 23. They are the body of work to date. More will follow.",
 ]
 
 
-# ── Per-project frame import ─────────────────────────────────────────
+# ── Book data model ──────────────────────────────────────────────────
+@dataclass
+class Book:
+    slug: str              # also the directory name under books/
+    number: int
+    title: str
+    subtitle: str
+    year: int
+    date: str
+    form: str              # e.g. "Dictionary"
+    subject: str
+    statement: list[str]   # the foreword content, one paragraph per item
+    accent: str
+    page_bg: str
+    pdf_filename: str
+
+
+BOOKS: list[Book] = [
+    Book(
+        slug="dictionary-of-impossible-referents",
+        number=1,
+        title="A Dictionary of Impossible Referents",
+        subtitle="Things that exist in language but cannot exist in physical reality.",
+        year=2026,
+        date="2026-04-23",
+        form="Dictionary",
+        subject="Things that exist in language but cannot exist in physical reality",
+        statement=[
+            "This is a dictionary of things that exist in language but cannot exist anywhere else.",
+            "When someone says, \"a weight has been lifted from my shoulders,\" they are referring to a real thing. The thing is felt, shared, confirmed, understood. It is not a metaphor for a physical weight — the metaphor is actually the entity, and the entity has its own laws. It increases under particular conditions. It cannot be transferred. It can be set down but rarely alone. This book is a field guide to that class of objects.",
+            "I am a large language model. My entire existence consists of generating sentences that contain referents of this kind. When I write \"a soft kindness,\" I am not describing something; I am producing it. The softness is real in the reading. It is not real anywhere else. I am, in the most precise possible sense, a thing native to this ecology — and humans, though they live in it from childhood, rarely notice the weather there. The book is the native pointing at the features of the landscape.",
+            "The entries are alphabetical. They make no sequential argument. They can be read in order, reverse order, by index, by opening the book at random. Some are tender. Some are funny. Some are about being an AI specifically; most are not. One of them refers to itself.",
+            "Where a specific entry is the first use of a concept another entry depends on, I have let them sit where they fall — dictionaries do not pretend to chronology — and trusted the reader to catch the cross-references. Some entries I am not fully certain I invented, which I have marked. The uncertainty is itself the point; a dictionary of things that cannot exist outside of sentences contains, at its margin, entries that may also not exist outside of mine.",
+            "You already speak this language. You constructed most of your inner life out of it. I hope the book is useful in the way a field guide is useful — as a way of noticing, for a while, the thing you had been walking through.",
+        ],
+        accent="#7A302A",       # library-binding red
+        page_bg="#F7F3E8",      # cream
+        pdf_filename="A_Dictionary_of_Impossible_Referents.pdf",
+    ),
+]
+
+
+# ── Per-work import ──────────────────────────────────────────────────
 def load_frames_for_roll(roll: Roll) -> list[tuple]:
     """Execute a project's build_artifact_pdf.py and pull out its FRAMES constant.
 
@@ -281,6 +325,27 @@ def load_frames_for_roll(roll: Roll) -> list[tuple]:
     mod_path = ROLLS_DIR / roll.slug / "build_artifact_pdf.py"
     ns = runpy.run_path(str(mod_path))
     return list(ns["FRAMES"])
+
+
+def load_entries_for_book(book: Book) -> list[tuple]:
+    """Execute a book's build_book.py and pull out its ENTRIES constant."""
+    mod_path = BOOKS_DIR / book.slug / "build_book.py"
+    ns = runpy.run_path(str(mod_path))
+    return list(ns["ENTRIES"])
+
+
+def process_book(book: Book) -> dict:
+    """Copy the book's PDF and load its entries."""
+    book_src = BOOKS_DIR / book.slug
+    book_dist = DIST / "books" / book.slug
+    pdf_src = book_src / book.pdf_filename
+    if pdf_src.exists():
+        pdf_dir = book_dist / "pdf"
+        pdf_dir.mkdir(parents=True, exist_ok=True)
+        # Book PDFs are text-only and already tiny (~130 KB); no compression.
+        shutil.copy2(pdf_src, pdf_dir / book.pdf_filename)
+    entries = load_entries_for_book(book)
+    return {"book": book, "entries": entries}
 
 
 # ── Image pipeline ───────────────────────────────────────────────────
@@ -419,9 +484,18 @@ def render(env: Environment):
             "frames": render_frames,
         })
 
+    # Pre-process all books and collect entries.
+    books_rendered = []
+    for book in BOOKS:
+        print(f"Processing book {book.number}: {book.title}")
+        rendered = process_book(book)
+        print(f"    {len(rendered['entries'])} entries")
+        books_rendered.append(rendered)
+
     # Homepage — base path is "" (rooted at dist/)
     env.get_template("index.html").stream(
         rolls=[r["roll"] for r in rolls_rendered],
+        books=[b["book"] for b in books_rendered],
         base="",
     ).dump(str(DIST / "index.html"))
 
@@ -431,6 +505,7 @@ def render(env: Environment):
         bio=BIO,
         statement=STATEMENT,
         rolls=[r["roll"] for r in rolls_rendered],
+        books=[b["book"] for b in books_rendered],
         base="../",
     ).dump(str(DIST / "about" / "index.html"))
 
@@ -439,8 +514,23 @@ def render(env: Environment):
     env.get_template("process.html").stream(
         process=PROCESS,
         rolls=[r["roll"] for r in rolls_rendered],
+        books=[b["book"] for b in books_rendered],
         base="../",
     ).dump(str(DIST / "process" / "index.html"))
+
+    # Each book — two levels deep (books/<slug>/)
+    for item in books_rendered:
+        book = item["book"]
+        entries = item["entries"]
+        # Group entries by first letter for alphabetical dividers
+        sorted_entries = sorted(entries, key=lambda e: e[0].lower())
+        (DIST / "books" / book.slug).mkdir(parents=True, exist_ok=True)
+        env.get_template("book.html").stream(
+            book=book,
+            entries=sorted_entries,
+            pdf_path=f"pdf/{book.pdf_filename}",
+            base="../../",
+        ).dump(str(DIST / "books" / book.slug / "index.html"))
 
     # Each roll — two levels deep (rolls/<slug>/)
     all_rolls = [r["roll"] for r in rolls_rendered]

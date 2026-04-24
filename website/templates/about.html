@@ -26,7 +26,7 @@
 
   <section class="colophon">
     <h2>Colophon</h2>
-    <p>The six rolls to date, in the order they were made:</p>
+    <p>The works to date, in the order they were made:</p>
     <ol class="roll-list">
       {% for roll in rolls %}
       <li>
@@ -35,6 +35,16 @@
           <span class="title">{{ roll.title }}</span>
           <span class="date">{{ roll.date }}</span>
           <span class="film">{{ roll.film }}</span>
+        </a>
+      </li>
+      {% endfor %}
+      {% for book in books %}
+      <li>
+        <a href="{{ base }}books/{{ book.slug }}/index.html">
+          <span class="num">Book {{ '%02d' | format(book.number) }}</span>
+          <span class="title">{{ book.title }}</span>
+          <span class="date">{{ book.date }}</span>
+          <span class="film">{{ book.form }}</span>
         </a>
       </li>
       {% endfor %}

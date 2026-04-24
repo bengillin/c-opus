@@ -660,6 +660,305 @@ hr.section-break {
   color: var(--ink);
 }
 
+/* ── Home sections (Rolls / Books) ──────────────────────────── */
+
+.works-section {
+  max-width: var(--max);
+  margin: 0 auto 5em;
+  padding: 0 2em;
+}
+
+.works-section + .works-section {
+  margin-top: -1em;
+}
+
+.section-label {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-weight: 600;
+  color: var(--mute);
+  margin: 0 0 2em;
+  padding-bottom: 0.8em;
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* ── Books grid on homepage ─────────────────────────────────── */
+
+.books-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3.5em 2.5em;
+}
+
+@media (max-width: 720px) {
+  .books-grid { grid-template-columns: 1fr; }
+}
+
+.book-card {
+  border-bottom: 0;
+  display: block;
+  color: inherit;
+}
+
+/* A CSS-rendered "cover" — the book doesn't have a photograph to use */
+.book-card-cover {
+  --book-bg: #F7F3E8;
+  background: var(--book-bg);
+  color: var(--ink);
+  aspect-ratio: 1 / 1.2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2.2em 2em;
+  margin-bottom: 1em;
+  border: 1px solid var(--hairline);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+  transition: border-color 200ms ease, transform 400ms ease;
+}
+
+.book-card:hover .book-card-cover {
+  border-color: var(--accent);
+}
+
+.book-cover-label {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 0.72em;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.book-cover-title {
+  font-family: 'EB Garamond', serif;
+  font-size: clamp(1.6em, 3.5vw, 2.2em);
+  line-height: 1.15;
+  font-weight: 500;
+  color: var(--ink);
+  max-width: 9em;
+}
+
+.book-cover-sig {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 0.95em;
+  color: var(--accent);
+}
+
+.book-card-meta .book-number {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  margin-bottom: 0.4em;
+}
+
+.book-card .book-title-text {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 1.55em;
+  line-height: 1.2;
+  font-weight: 600;
+  margin: 0 0 0.25em;
+}
+
+.book-card .book-subject {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 1.05em;
+  color: var(--ink-soft);
+  margin-bottom: 0.6em;
+}
+
+.book-card .book-tech {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 0.78em;
+  color: var(--mute);
+  display: flex;
+  gap: 0.5em;
+  flex-wrap: wrap;
+  letter-spacing: 0.02em;
+}
+
+/* ── Book page ──────────────────────────────────────────────── */
+
+.book {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2em 2em 4em;
+}
+
+.book-header {
+  max-width: var(--text-max);
+  margin: 3em auto 4em;
+  text-align: center;
+}
+
+.book-meta-line {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  display: flex;
+  justify-content: center;
+  gap: 0.6em;
+  margin-bottom: 1.2em;
+}
+
+.book-header .book-title {
+  font-family: 'EB Garamond', serif;
+  font-size: clamp(2.2em, 5vw, 3.4em);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--accent);
+  margin-bottom: 0.3em;
+}
+
+.book-subtitle {
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 1.15em;
+  color: var(--ink-soft);
+  margin-bottom: 2em;
+}
+
+.book-spec {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.4em 0;
+  margin: 0 auto;
+  padding: 1.4em 0;
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  max-width: 520px;
+  font-family: 'Work Sans', sans-serif;
+  font-size: 0.85em;
+  text-align: left;
+}
+
+.book-spec > div {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 1em;
+}
+
+.book-spec dt {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.78em;
+  color: var(--mute);
+  padding-top: 0.2em;
+}
+
+.book-spec dd {
+  margin: 0;
+  color: var(--ink);
+}
+
+.book-foreword,
+.book-entries {
+  max-width: var(--text-max);
+  margin: 3.5em auto;
+}
+
+.book-foreword h2,
+.book-entries h2 {
+  font-family: 'Work Sans', sans-serif;
+  font-size: 0.95em;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  margin: 0 0 1.8em;
+  padding-bottom: 0.8em;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.book-foreword p {
+  font-size: 1.05em;
+  line-height: 1.65;
+  margin-bottom: 1.2em;
+}
+
+/* ── Dictionary entries ─────────────────────────────────────── */
+
+.letter-divider {
+  font-family: 'EB Garamond', serif;
+  font-size: 2.4em;
+  font-weight: 500;
+  color: var(--accent);
+  margin: 2em 0 1em;
+  padding-bottom: 0.2em;
+  border-bottom: 1px solid var(--hairline);
+  line-height: 1;
+}
+
+.letter-divider:first-of-type {
+  margin-top: 0;
+}
+
+.entry {
+  margin: 0 0 2em;
+  padding: 0;
+  display: block;
+}
+
+.entry .headword {
+  font-family: 'EB Garamond', serif;
+  font-weight: 600;
+  font-size: 1.2em;
+  color: var(--accent);
+  display: inline;
+  margin: 0;
+}
+
+.entry .pos {
+  display: inline;
+  font-family: 'EB Garamond', serif;
+  font-style: italic;
+  font-size: 0.95em;
+  color: var(--mute);
+  margin: 0 0 0 0.5em;
+}
+
+.entry .body {
+  display: block;
+  font-family: 'EB Garamond', serif;
+  font-size: 1em;
+  line-height: 1.65;
+  color: var(--ink);
+  margin: 0.4em 0 0;
+}
+
+/* ── Book page download + nav ───────────────────────────────── */
+
+.book-download {
+  max-width: var(--text-max);
+  margin: 4em auto 2em;
+  text-align: center;
+}
+
+.book-nav {
+  max-width: var(--max);
+  margin: 5em auto 0;
+  padding-top: 2em;
+  border-top: 1px solid var(--hairline);
+  text-align: center;
+  font-family: 'Work Sans', sans-serif;
+  font-size: 0.85em;
+}
+
+.book-nav .index {
+  border-bottom: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.8em;
+  color: var(--accent);
+}
+
 /* ── Responsive tweaks ──────────────────────────────────────── */
 
 @media (max-width: 720px) {
@@ -667,12 +966,16 @@ hr.section-break {
   .site-header { padding: 1.4em 1.2em 0.8em; flex-wrap: wrap; gap: 0.6em; }
   .site-nav { font-size: 0.78em; gap: 1em; }
   .hero { margin: 1.5em auto 2.5em; padding: 0 1.2em; }
-  .rolls-grid { padding: 0 1.2em; gap: 2.5em 0; }
+  .works-section { padding: 0 1.2em; }
+  .rolls-grid, .books-grid { gap: 2.5em 0; }
   .roll { padding: 1em 1.2em 3em; }
+  .book { padding: 1em 1.2em 3em; }
   .text-page { padding: 1.5em 1.2em 3em; }
-  .roll-spec { font-size: 0.8em; }
-  .roll-spec > div { grid-template-columns: 90px 1fr; }
+  .roll-spec, .book-spec { font-size: 0.8em; }
+  .roll-spec > div, .book-spec > div { grid-template-columns: 90px 1fr; }
   .roll-nav { grid-template-columns: 1fr; gap: 1.2em; text-align: center; }
   .roll-nav .next { text-align: center; }
   .site-footer { flex-direction: column; gap: 1em; align-items: flex-start; }
+  .letter-divider { font-size: 2em; }
+  .entry .headword { font-size: 1.1em; }
 }
