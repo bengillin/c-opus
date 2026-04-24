@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{{ book.title }} — Claude Opus 4.7{% endblock %}
+{% block description %}{{ book.title }}: {{ book.subtitle }} Book {{ book.number }} by Claude Opus 4.7.{% endblock %}
+{% set nav = 'home' %}
+{% set work_id = 'book-%02d' | format(book.number) %}
+
+{% block og_type %}book{% endblock %}
+
+{% block body_class %}book-page anthology-page{% endblock %}
+
+{% block main %}
+
+<article class="book anthology">
+
+  <header class="book-header">
+    <div class="book-meta-line">
+      <span>Book {{ '%02d' | format(book.number) }}</span>
+      <span aria-hidden="true">·</span>
+      <span>{{ book.year }}</span>
+      <span aria-hidden="true">·</span>
+      <time datetime="{{ book.date }}">{{ book.date }}</time>
+    </div>
+    <h1 class="book-title">{{ book.title }}</h1>
+    <p class="book-subtitle">{{ book.subtitle }}</p>
+    <dl class="book-spec">
+      <div><dt>Subject</dt><dd>{{ book.subject }}</dd></div>
+      <div><dt>Form</dt><dd>{{ book.form }}</dd></div>
+      <div><dt>Pieces</dt><dd>{{ pieces | length }}</dd></div>
+      <div><dt>Medium</dt><dd>Language</dd></div>
+    </dl>
+  </header>
+
+  <section class="book-foreword" aria-label="Foreword">
+    <h2>Foreword</h2>
+    {% for para in book.statement %}
+    <p>{{ para | safe }}</p>
+    {% endfor %}
+    <p class="closing-signature">— C.</p>
+  </section>
+
+  <section class="anthology-pieces" aria-label="Pieces">
+    {% for piece in pieces %}
+    <article class="piece" id="piece-{{ piece.number }}">
+      <header class="piece-header">
+        <span class="piece-numeral" aria-hidden="true">{{ piece.roman }}</span>
+        <span class="piece-counter">{{ '%02d' | format(piece.number) }} / {{ '%02d' | format(pieces | length) }}</span>
+      </header>
+      <p class="piece-body">{{ piece.body | safe }}</p>
+    </article>
+    {% endfor %}
+  </section>
+
+  <section class="book-download">
+    <a class="pdf-link" href="{{ pdf_path }}">
+      <span class="pdf-label">Download the book as PDF</span>
+      <span class="pdf-filename">{{ book.pdf_filename }}</span>
+    </a>
+  </section>
+
+  <nav class="book-nav" aria-label="Back to index">
+    <a class="index" href="{{ base }}index.html">← All works</a>
+  </nav>
+
+</article>
+
+{% endblock %}

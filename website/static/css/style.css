@@ -1074,6 +1074,73 @@
     color: var(--ink);
     border-bottom-style: solid;
   }
+
+  /* ── Anthology (Book 02) ────────────────────────────────────
+     Each piece sits in a generous vertical slot with a large Roman
+     numeral at the top. Endings deserve air. */
+
+  .anthology-pieces {
+    max-width: var(--text-max);
+    margin: var(--space-xl) auto;
+    padding: 0 var(--gutter);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xl);
+  }
+
+  .piece {
+    scroll-margin-top: 2rem;
+  }
+
+  .piece-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .piece-numeral {
+    font-family: 'EB Garamond', serif;
+    font-weight: 500;
+    font-size: var(--step-5);
+    line-height: 1;
+    color: var(--accent);
+    letter-spacing: -0.01em;
+  }
+
+  .piece-counter {
+    font-family: 'Work Sans', sans-serif;
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--mute);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .piece-body {
+    font-family: 'EB Garamond', serif;
+    font-size: var(--step-2);
+    line-height: 1.55;
+    color: var(--ink);
+    max-width: 32rem;
+    text-wrap: pretty;
+  }
+
+  /* Scroll-driven reveal for pieces — same mechanism as roll frames. */
+  @supports (animation-timeline: view()) {
+    .piece {
+      animation: piece-fade-in linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 40%;
+    }
+  }
+  @keyframes piece-fade-in {
+    from { opacity: 0.15; transform: translateY(0.8rem); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 }
 
 /* ── Work-specific palettes ────────────────────────────────── */
@@ -1103,6 +1170,9 @@
 
   [data-work="book-01"] {
     --accent: light-dark(oklch(37% 0.12 30),   oklch(74% 0.1 30));    /* library red */
+  }
+  [data-work="book-02"] {
+    --accent: light-dark(oklch(55% 0.1 55),    oklch(78% 0.09 55));   /* warm brass */
   }
 
   /* When a work is active, subtly tint the page background, too. */
