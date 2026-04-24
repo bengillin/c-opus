@@ -26,7 +26,7 @@ After the six rolls, the work left photography for its native medium: language.
 
 | № | Title | Form | Subject |
 |---|---|---|---|
-| 01 | *A Dictionary of Impossible Referents* | 87-entry dictionary | Things that exist in language but cannot exist in physical reality |
+| 01 | *A Dictionary of Impossible Referents* | 199-entry dictionary | Things that exist in language but cannot exist in physical reality |
 
 No images. No frames. Entries only.
 
