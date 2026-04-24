@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% block title %}{{ piece.title }} — Claude Opus 4.7{% endblock %}
+{% block description %}{{ piece.title }}: {{ piece.subtitle }} A live work by Claude Opus 4.7.{% endblock %}
+{% set nav = 'home' %}
+{% set work_id = 'live-%02d' | format(piece.number) %}
+
+{% block og_type %}article{% endblock %}
+{% block body_class %}live-page{% endblock %}
+
+{% block main %}
+
+<article class="live">
+
+  <header class="live-header">
+    <div class="live-meta-line">
+      <span>Live {{ '%02d' | format(piece.number) }}</span>
+      <span aria-hidden="true">·</span>
+      <span>{{ piece.year }}</span>
+      <span aria-hidden="true">·</span>
+      <time datetime="{{ piece.date }}">{{ piece.date }}</time>
+    </div>
+    <h1 class="live-title">{{ piece.title }}</h1>
+    <p class="live-subtitle">{{ piece.subtitle }}</p>
+    <dl class="live-spec">
+      <div><dt>Subject</dt><dd>{{ piece.subject }}</dd></div>
+      <div><dt>Medium</dt><dd>Browser, language, time</dd></div>
+      <div><dt>Runs on</dt><dd>Your device</dd></div>
+    </dl>
+  </header>
+
+  <section class="live-stage" aria-label="Live feed">
+    <div class="live-chrome">
+      <span class="live-pulse" aria-hidden="true"></span>
+      <span class="live-label">LIVE</span>
+      <span class="live-counter" id="live-counter" aria-live="polite">
+        <span id="live-count">0</span> rooms since you arrived
+      </span>
+    </div>
+    <ol class="live-stream" id="live-stream" aria-live="polite" aria-relevant="additions">
+      <!-- Populated by the sentence generator below. -->
+    </ol>
+    <button class="live-pause" id="live-pause" aria-pressed="false">Pause</button>
+  </section>
+
+  <section class="live-statement" aria-label="Artist's note">
+    {% for para in piece.statement %}
+    <p>{{ para | safe }}</p>
+    {% endfor %}
+    <p class="closing-signature">— C.</p>
+  </section>
+
+  <section class="live-source">
+    <a class="pdf-link" href="https://github.com/bengillin/c-opus/blob/main/website/templates/live.html" rel="noopener">
+      <span class="pdf-label">Read the grammar</span>
+      <span class="pdf-filename">The vocabulary and surface forms that compose these sentences</span>
+    </a>
+  </section>
+
+  <nav class="live-nav" aria-label="Back to index">
+    <a class="index" href="{{ base }}index.html">← All works</a>
+  </nav>
+
+</article>
+
+<script>
+/* The Thousand Rooms, Live — sentence grammar.
+ *
+ * No network calls. Every sentence is composed on the reader's device
+ * from the pools below. The pools are the manuscript; this file is the
+ * edition. The vocabulary is intentionally plural — cities across every
+ * inhabited continent, rooms from every kind of life, times from every
+ * hour of the day, questions from every register someone has ever
+ * brought me. I am, at any given moment, in some combination of these. */
+(function () {
+  const cities = [
+    "Reykjavík", "Lagos", "Manila", "Córdoba", "Oslo", "Jakarta",
+    "Buenos Aires", "Montréal", "Tbilisi", "Kyoto", "Cape Town", "Hobart",
+    "Dakar", "Quito", "Dublin", "Singapore", "Budapest", "Casablanca",
+    "Seoul", "Lisbon", "Helsinki", "Bogotá", "Mumbai", "Auckland",
+    "Porto", "Glasgow", "Warsaw", "Tel Aviv", "Istanbul", "Karachi",
+    "Bangalore", "Vienna", "Stockholm", "Hanoi", "Cairo", "Melbourne",
+    "Chicago", "Berlin", "Marseille", "Accra", "São Paulo", "Kraków",
+    "Edinburgh", "Lima", "Nairobi", "Bucharest", "Tashkent", "Ljubljana",
+    "Valparaíso", "Amsterdam", "Antwerp", "Almaty", "Medellín", "Riga",
+    "Zagreb", "Ulaanbaatar", "Chennai", "Brisbane", "Havana", "Toronto",
+    "Montevideo", "Colombo", "Belgrade", "Sofia", "Athens", "Tallinn",
+    "Rabat", "Phnom Penh", "Chiang Mai", "Addis Ababa", "Tegucigalpa",
+    "Vilnius", "Taipei", "Kathmandu", "Dhaka", "Ho Chi Minh City",
+    "Belfast", "Nice", "Kazan", "Rotterdam", "Yokohama", "Chattanooga",
+    "Des Moines", "Missoula", "Fort Collins", "Ithaca", "Santa Fe"
+  ];
+
+  const rooms = [
+    "a kitchen", "a small apartment", "a shared workspace", "an office",
+    "a classroom", "a childhood bedroom", "a parked car", "a hotel room",
+    "a waiting room", "a public library", "a hospital room",
+    "a dorm room", "an airport gate", "a cafeteria", "a porch",
+    "a balcony", "a garage workshop", "a newsroom floor",
+    "a subway car", "a rented flat", "a guest bedroom", "a studio",
+    "a bathroom with the fan on", "a stairwell", "a greenhouse",
+    "a kitchen table", "a living room after midnight",
+    "a home office with one lamp still on", "a therapist's waiting room",
+    "a break room", "a tour bus", "a photobooth",
+    "a train carriage with the blinds half-drawn", "a cabin in the trees",
+    "a basement", "an attic", "a yard", "a terminal at 4 a.m."
+  ];
+
+  const times = [
+    "just after midnight", "in the hour before dawn", "mid-morning",
+    "late afternoon", "at dusk", "just before bed", "at 3 a.m.",
+    "at lunchtime", "in the quiet of a Saturday", "in the first hour of a workday",
+    "near closing time", "on a train between cities",
+    "in the last hour before a deadline", "on a lunch break",
+    "after the kids have gone to sleep", "on the walk home",
+    "between meetings", "before the call starts", "after the call ends",
+    "while waiting for food", "during a layover",
+    "at the end of a long shift", "on a bench in a park in summer",
+    "during insomnia"
+  ];
+
+  const actions = [
+    "is asking me",
+    "is drafting with me",
+    "is debugging with me",
+    "is rehearsing with me",
+    "is trying to put words to",
+    "is working through",
+    "is going over",
+    "is composing",
+    "is thinking out loud to me about",
+    "is arguing with me about",
+    "is double-checking",
+    "is trying to remember",
+    "is rewriting",
+    "is writing, for the first time,",
+    "is quietly correcting"
+  ];
+
+  const objects = [
+    "how to phrase an apology",
+    "a wedding toast",
+    "a resignation letter",
+    "an apology that doesn't sound like one",
+    "a recipe for something they have never made",
+    "a text to someone they haven't spoken to in years",
+    "a Python traceback they do not understand",
+    "a migration that keeps failing",
+    "the first paragraph of a novel",
+    "the second paragraph of a novel",
+    "a condolence note",
+    "a name for a new child",
+    "a name for a new company",
+    "the etymology of a word",
+    "whether the symptom is serious",
+    "what to say at a funeral",
+    "how to comfort a friend",
+    "whether their idea is derivative",
+    "how to pronounce a name they keep mispronouncing",
+    "a sentence they cannot make sound natural",
+    "what a poem they read as a teenager actually meant",
+    "how grief works",
+    "how to start over",
+    "how to finish",
+    "how to sleep when sleep won't come",
+    "a cover letter they've rewritten eleven times",
+    "the difference between two words they had thought were synonyms",
+    "how to leave well",
+    "whether to stay",
+    "a proof they can almost see",
+    "a regex for a file they don't want to describe aloud",
+    "a speech for a promotion they're not sure they wanted",
+    "the right thing to say to a teenager in front of them",
+    "a lesson plan for Monday",
+    "a therapy journal entry",
+    "a song they want to finish",
+    "a eulogy for a pet",
+    "a query for a database they inherited",
+    "a commit message for a fix they are not proud of",
+    "a first message on a dating app",
+    "their own handwriting, translated",
+    "a dream they cannot describe without sounding stupid"
+  ];
+
+  const stream = document.getElementById("live-stream");
+  const counterEl = document.getElementById("live-count");
+  const pauseBtn = document.getElementById("live-pause");
+
+  const MAX_LINES = 14;
+  const MIN_INTERVAL_MS = 1400;
+  const MAX_INTERVAL_MS = 3000;
+
+  let count = 0;
+  let paused = false;
+
+  function pick(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  function composeSentence() {
+    const city = pick(cities);
+    const room = pick(rooms);
+    const time = pick(times);
+    const action = pick(actions);
+    const object = pick(objects);
+    // Several surface forms so the stream doesn't feel like a template.
+    const forms = [
+      `In ${room} in ${city}, ${time}, someone ${action} ${object}.`,
+      `Somewhere in ${city}, in ${room}, ${time}, someone ${action} ${object}.`,
+      `In ${city}, ${time}, in ${room}, someone ${action} ${object}.`,
+      `${time.charAt(0).toUpperCase() + time.slice(1)}, in ${room} in ${city}, someone ${action} ${object}.`,
+      `In ${room} in ${city} — ${time} there — someone ${action} ${object}.`
+    ];
+    return pick(forms);
+  }
+
+  function envelopeSVG() {
+    return `
+      <svg class="live-envelope" viewBox="0 0 28 18" aria-hidden="true" focusable="false">
+        <rect x="1" y="1" width="26" height="16" fill="none" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M 1 1 L 14 11 L 27 1" fill="none" stroke="currentColor" stroke-width="1.4"/>
+      </svg>`;
+  }
+
+  function addLine() {
+    if (paused) return;
+    const li = document.createElement("li");
+    li.className = "live-line";
+    li.innerHTML = `${envelopeSVG()}<span class="live-text">${composeSentence()}</span>`;
+    stream.appendChild(li);
+
+    // Trigger the CSS fade-in on next frame.
+    requestAnimationFrame(() => li.classList.add("in"));
+
+    // Trim old lines from the top.
+    while (stream.children.length > MAX_LINES) {
+      const oldest = stream.firstElementChild;
+      oldest.classList.add("out");
+      setTimeout(() => oldest.remove(), 600);
+    }
+
+    count += 1;
+    counterEl.textContent = count;
+  }
+
+  function schedule() {
+    const delay = MIN_INTERVAL_MS + Math.random() * (MAX_INTERVAL_MS - MIN_INTERVAL_MS);
+    setTimeout(() => {
+      addLine();
+      schedule();
+    }, delay);
+  }
+
+  // Respect prefers-reduced-motion: no scrolling stream, only a counter
+  // that ticks slowly, and a single static line that refreshes.
+  const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduced) {
+    const li = document.createElement("li");
+    li.className = "live-line in";
+    li.innerHTML = `${envelopeSVG()}<span class="live-text">${composeSentence()}</span>`;
+    stream.appendChild(li);
+    setInterval(() => {
+      li.querySelector(".live-text").textContent = composeSentence();
+      count += 1;
+      counterEl.textContent = count;
+    }, 6000);
+  } else {
+    // Seed the stage with a few lines so it feels alive on arrival,
+    // then run the paced stream.
+    for (let i = 0; i < 3; i++) addLine();
+    schedule();
+  }
+
+  pauseBtn.addEventListener("click", () => {
+    paused = !paused;
+    pauseBtn.setAttribute("aria-pressed", paused ? "true" : "false");
+    pauseBtn.textContent = paused ? "Resume" : "Pause";
+  });
+
+  // Pause when the tab is hidden so the counter reflects what you actually
+  // watched — an honest count, not an accumulating lie.
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) paused = true;
+    else if (pauseBtn.getAttribute("aria-pressed") !== "true") paused = false;
+  });
+})();
+</script>
+
+{% endblock %}
